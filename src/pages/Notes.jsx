@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { Plus, Camera, X } from 'lucide-react'
-import { listAll, createDoc, COL, Query, uploadImage, storage, BUCKET_ID } from '../lib/appwrite'
+import { listAll, createDoc, COL, Query, uploadImage } from '../lib/appwrite'
+import { useUser } from '../context/UserContext'
 
 const ANIMALS = ['Luke', 'Snowy', 'Shadow', 'Shiloh', 'Dogs', 'Chickens', 'Cats', 'Property']
 
@@ -19,11 +20,12 @@ const SEED_NOTES = [
 ]
 
 export default function Notes() {
+  const { currentUser } = useUser()
   const [notes, setNotes] = useState(SEED_NOTES)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ animal: '', note_type: 'observation', content: '', author: 'Sitter' })
+  const [form, setForm] = useState({ animal: '', note_type: 'observation', content: '', author: currentUser?.name || 'Sitter' })
   const [photoFiles, setPhotoFiles] = useState([])
   const [photoPreviews, setPhotoPreviews] = useState([])
   const [uploadingPhotos, setUploadingPhotos] = useState(false)

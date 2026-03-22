@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
-import { AlertTriangle, ChevronRight, Droplets, Wind } from 'lucide-react'
+import { AlertTriangle, ChevronRight } from 'lucide-react'
 import { MEAL_TIMES } from '../data/ranchData'
+import { useUser } from '../context/UserContext'
 
 const QUICK_TASKS = [
   { id: 'barn_water', label: 'Top off barn water', icon: '💧', time: 'breakfast' },
-  { id: 'equine_breakfast', label: 'Equine breakfast pellets + hay', icon: '🌾', time: 'breakfast', note: '⚠️ Luke's bag has medicine!' },
+  { id: 'equine_breakfast', label: 'Equine breakfast pellets + hay', icon: '🌾', time: 'breakfast', note: "⚠️ Luke's bag has medicine!" },
   { id: 'chicken_am', label: 'Check chicken feeder & water', icon: '🐔', time: 'breakfast' },
   { id: 'dog_breakfast', label: 'Dog food + Dentastix', icon: '🐕', time: 'breakfast' },
   { id: 'cat_food', label: 'Check cat gravity feeder', icon: '🐈', time: 'breakfast' },
@@ -28,6 +29,7 @@ function getTimeOfDay() {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { currentUser } = useUser()
   const [checked, setChecked] = useState(() => {
     const saved = localStorage.getItem(`rlr_checks_${format(new Date(), 'yyyy-MM-dd')}`)
     return saved ? JSON.parse(saved) : {}
@@ -57,7 +59,9 @@ export default function Dashboard() {
       <div className="greeting-card">
         <div className="greeting-time">{format(new Date(), 'EEEE, MMMM d')}</div>
         <div className="greeting-main">{timeInfo.label}</div>
-        <div className="greeting-sub">{timeInfo.sub}</div>
+        <div className="greeting-sub">
+          {currentUser ? `Welcome, ${currentUser.name}! ${timeInfo.sub}` : timeInfo.sub}
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -73,11 +77,7 @@ export default function Dashboard() {
       </div>
 
       {/* Evacuation alert */}
-      <div
-        className="alert alert-danger"
-        style={{ cursor: 'pointer' }}
-        onClick={() => navigate('/evacuation')}
-      >
+      <div className="alert alert-danger" style={{ cursor: 'pointer' }} onClick={() => navigate('/evacuation')}>
         <AlertTriangle size={18} color="var(--danger)" />
         <div className="alert-content">
           <div className="alert-title">Evacuation Protocol</div>
