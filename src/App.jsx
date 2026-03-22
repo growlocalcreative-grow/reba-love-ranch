@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { UserProvider, useUser, UserPicker } from './context/UserContext'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import FeedSchedule from './pages/FeedSchedule'
@@ -11,7 +12,10 @@ import HealthRecords from './pages/HealthRecords'
 import Notes from './pages/Notes'
 import Evacuation from './pages/Evacuation'
 
-export default function App() {
+function AppRoutes() {
+  const { currentUser } = useUser()
+  if (!currentUser) return <UserPicker />
+
   return (
     <BrowserRouter>
       <Routes>
@@ -29,5 +33,13 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+  )
+}
+
+export default function App() {
+  return (
+    <UserProvider>
+      <AppRoutes />
+    </UserProvider>
   )
 }
