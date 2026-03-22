@@ -6,7 +6,7 @@ import { MEAL_TIMES } from '../data/ranchData'
 
 const QUICK_TASKS = [
   { id: 'barn_water', label: 'Top off barn water', icon: '💧', time: 'breakfast' },
-  { id: 'equine_breakfast', label: 'Equine breakfast pellets + hay', icon: '🌾', time: 'breakfast', note: '⚠️ Luke's bag has medicine!' },
+  { id: 'equine_breakfast', label: 'Equine breakfast pellets + hay', icon: '🌾', time: 'breakfast', note: "⚠️ Luke's bag has medicine!" },
   { id: 'chicken_am', label: 'Check chicken feeder & water', icon: '🐔', time: 'breakfast' },
   { id: 'dog_breakfast', label: 'Dog food + Dentastix', icon: '🐕', time: 'breakfast' },
   { id: 'cat_food', label: 'Check cat gravity feeder', icon: '🐈', time: 'breakfast' },
