@@ -1,8 +1,10 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Wheat, Heart, Wrench, AlertTriangle, BookOpen, FileText } from 'lucide-react'
+import { useUser } from '../context/UserContext'
 
 export default function Layout() {
   const navigate = useNavigate()
+  const { currentUser, clearUser } = useUser()
 
   return (
     <div className="app-layout">
@@ -12,7 +14,17 @@ export default function Layout() {
           <div className="brand-mark">RLR</div>
           <div className="brand-text">
             <span className="ranch-name">Reba Love Ranch</span>
-            <span className="ranch-sub">Ranch Sitter App</span>
+            <button
+              onClick={clearUser}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 10, color: 'var(--slate-grey)', fontFamily: 'var(--font-heading)',
+                fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                padding: 0, textAlign: 'left',
+              }}
+            >
+              {currentUser?.emoji} {currentUser?.name} · Switch
+            </button>
           </div>
         </div>
         <button
