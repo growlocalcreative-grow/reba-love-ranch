@@ -2,13 +2,13 @@ import { useState } from 'react'
 
 const ANIMALS = [
   {
-    name: 'Belle', type: 'equine', emoji: '🐴',
+    name: 'Shadow', type: 'equine', emoji: '🐴',
     breed: 'Horse', notes: 'The biggest equine on the ranch.',
     likes: 'Carrots (sliced), hay',
     dislikes: null,
     odd_but_ok: null,
     special: [
-      '🚨 LOAD FIRST during evacuation. Once Belle is in, the others usually follow.',
+      '🚨 LOAD FIRST during evacuation. Once Shadow is in, the others usually follow.',
       'Needs a full 1 flake of hay at night check (others only get ½).',
     ],
     badge: 'badge-orange',
@@ -32,7 +32,7 @@ const ANIMALS = [
     dislikes: null,
     odd_but_ok: null,
     special: [
-      'Will load into trailer if Belle refuses. Try Snowy second if Belle won\'t go.',
+      'Will load into trailer if Shadow refuses. Try Snowy second if Shadow won\'t go.',
       'Load second in evacuation sequence.',
     ],
     badge: 'badge-blue',

@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { Plus, Camera, X } from 'lucide-react'
 import { listAll, createDoc, COL, Query, uploadImage, storage, BUCKET_ID } from '../lib/appwrite'
 
-const ANIMALS = ['Luke', 'Snowy', 'Belle', 'Shiloh', 'Dogs', 'Chickens', 'Cats', 'Property']
+const ANIMALS = ['Luke', 'Snowy', 'Shadow', 'Shiloh', 'Dogs', 'Chickens', 'Cats', 'Property']
 
 const NOTE_TYPES = {
   general:     { label: 'General',          icon: '📝', badge: 'badge-grey' },

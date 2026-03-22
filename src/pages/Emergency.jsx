@@ -6,7 +6,7 @@ const CONTACTS = [
     category: 'vets',
     title: '🏥 Veterinary',
     items: [
-      { name: 'Loomis Basin Equine Medical', role: 'Equine Vet', phone: '9166527645', display: '(916) 652-7645', note: 'Primary equine care — Luke, Snowy, Belle' },
+      { name: 'Loomis Basin Equine Medical', role: 'Equine Vet', phone: '9166527645', display: '(916) 652-7645', note: 'Primary equine care — Luke, Snowy, Shadow' },
       { name: 'Dr. De La Cruz', role: 'Equine Vet', phone: '9166527645', display: '(916) 652-7645', note: 'Same clinic as above' },
       { name: 'Cool Veterinary Hospital', role: 'Dogs & Cats Vet', phone: '5306861949', display: '(530) 686-1949', note: 'For dogs and cats' },
     ]

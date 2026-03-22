@@ -35,8 +35,8 @@ export default function Evacuation() {
       <div className="card">
         <div className="card-title" style={{ marginBottom: 12 }}>🐴 Horse Loading Order</div>
         {[
-          { order: '1st', name: 'Belle', note: 'Biggest — load first. Others follow.', color: 'var(--danger)' },
-          { order: '2nd', name: 'Snowy', note: 'If Belle won\'t go, try Snowy instead.', color: 'var(--warning)' },
+          { order: '1st', name: 'Shadow', note: 'Biggest — load first. Others follow.', color: 'var(--danger)' },
+          { order: '2nd', name: 'Snowy', note: 'If Shadow won\'t go, try Snowy instead.', color: 'var(--warning)' },
           { order: '3rd', name: 'Luke', note: 'Always load last.', color: 'var(--forest-green)' },
         ].map(h => (
           <div key={h.name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--warm-beige-dark)' }}>

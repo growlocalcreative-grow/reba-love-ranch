@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { Plus } from 'lucide-react'
 import { listAll, createDoc, COL, Query } from '../lib/appwrite'
 
-const ANIMALS = ['Luke', 'Snowy', 'Belle', 'Shiloh', 'Dogs', 'Chickens', 'Cats']
+const ANIMALS = ['Luke', 'Snowy', 'Shadow', 'Shiloh', 'Dogs', 'Chickens', 'Cats']
 
 const RECORD_TYPES = {
   vet_visit:   { label: 'Vet Visit',        icon: '🏥', badge: 'badge-blue' },

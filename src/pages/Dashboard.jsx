@@ -6,7 +6,7 @@ import { MEAL_TIMES } from '../data/ranchData'
 
 const QUICK_TASKS = [
   { id: 'barn_water', label: 'Top off barn water', icon: '💧', time: 'breakfast' },
-  { id: 'equine_breakfast', label: 'Equine breakfast pellets + hay', icon: '🌾', time: 'breakfast', note: "⚠️ Luke's bag has medicine!" },
+  { id: 'equine_breakfast', label: 'Equine breakfast pellets + hay', icon: '🌾', time: 'breakfast', note: '⚠️ Luke's bag has medicine!' },
   { id: 'chicken_am', label: 'Check chicken feeder & water', icon: '🐔', time: 'breakfast' },
   { id: 'dog_breakfast', label: 'Dog food + Dentastix', icon: '🐕', time: 'breakfast' },
   { id: 'cat_food', label: 'Check cat gravity feeder', icon: '🐈', time: 'breakfast' },
@@ -16,7 +16,7 @@ const QUICK_TASKS = [
   { id: 'dog_dinner', label: 'Dog dinner (no water for Shiloh after 6pm)', icon: '🐕', time: 'dinner' },
   { id: 'manure_pm', label: 'Pick up manure — afternoon round', icon: '♻️', time: 'dinner' },
   { id: 'chicken_night', label: 'Verify all hens in coop (close door if open)', icon: '🐔', time: 'night_check', note: 'Auto-closes 9pm' },
-  { id: 'equine_night', label: 'Night hay — Belle: 1 flake; Snowy & Luke: ½ flake each', icon: '🌙', time: 'night_check' },
+  { id: 'equine_night', label: 'Night hay — Shadow: 1 flake; Snowy & Luke: ½ flake each', icon: '🌙', time: 'night_check' },
 ]
 
 function getTimeOfDay() {

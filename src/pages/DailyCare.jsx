@@ -3,13 +3,13 @@ import { format } from 'date-fns'
 import { Plus, X } from 'lucide-react'
 import { ANIMAL_TYPES, CARE_TYPES } from '../data/ranchData'
 
-const ANIMALS = ['Luke', 'Snowy', 'Belle', 'Shiloh', 'Dogs', 'Chickens', 'Cats']
+const ANIMALS = ['Luke', 'Snowy', 'Shadow', 'Shiloh', 'Dogs', 'Chickens', 'Cats']
 
 const CARE_ITEMS = [
   // Snacks
   { id: 'luke_carrot', animal: 'Luke', type: 'snack', label: 'Carrot (sliced)', schedule: 'daily' },
   { id: 'snowy_carrot', animal: 'Snowy', type: 'snack', label: 'Carrot (sliced)', schedule: 'daily' },
-  { id: 'belle_carrot', animal: 'Belle', type: 'snack', label: 'Carrot (sliced)', schedule: 'daily' },
+  { id: 'belle_carrot', animal: 'Shadow', type: 'snack', label: 'Carrot (sliced)', schedule: 'daily' },
   // Medication
   { id: 'luke_med', animal: 'Luke', type: 'medication', label: 'Morning medicine in breakfast pellets', schedule: 'daily', important: true },
   // Hygiene
@@ -103,9 +103,9 @@ export default function DailyCare() {
       <div className="card">
         <div className="card-title" style={{ marginBottom: 12 }}>🧠 Personality Notes</div>
         {[
-          { name: 'Belle', emoji: '🐴', note: 'Biggest equine. Load first in evacuation.', badge: 'badge-orange' },
+          { name: 'Shadow', emoji: '🐴', note: 'Biggest equine. Load first in evacuation.', badge: 'badge-orange' },
           { name: 'Luke', emoji: '🐴', note: 'Sweet and gentle. ⚠️ Needs medicine in morning pellets.', badge: 'badge-red' },
-          { name: 'Snowy', emoji: '🐴', note: 'Will load if Belle won\'t. Load second in evacuation.', badge: 'badge-blue' },
+          { name: 'Snowy', emoji: '🐴', note: 'Will load if Shadow won\'t. Load second in evacuation.', badge: 'badge-blue' },
           { name: 'Shiloh', emoji: '🐕', note: 'No water after 6pm — wets the bed.', badge: 'badge-red' },
           { name: 'Cats', emoji: '🐈', note: 'Not allowed in the house. Mud Room only.', badge: 'badge-grey' },
         ].map(a => (

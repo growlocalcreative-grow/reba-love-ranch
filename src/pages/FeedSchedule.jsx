@@ -72,7 +72,7 @@ export default function FeedSchedule() {
         <div className="check-row">
           <span style={{ fontSize: 20 }}>🐴</span>
           <div className="check-label">
-            <strong>Equines (Luke, Snowy, Belle)</strong> — each can have a carrot (cut into slices)
+            <strong>Equines (Luke, Snowy, Shadow)</strong> — each can have a carrot (cut into slices)
           </div>
         </div>
         <div className="check-row">
