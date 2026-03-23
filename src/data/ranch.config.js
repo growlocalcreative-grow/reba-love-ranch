@@ -48,16 +48,16 @@ export const RANCH_CONFIG = {
     {
       name: 'Luke',
       type: 'equine',
-      breed: 'Horse',
-      emoji: '🐴',
-      notes: 'Sweet and gentle disposition. Requires daily medication — see special notes.',
+      breed: 'Donkey',
+      emoji: '🫏',
+      notes: 'Sweet and gentle disposition. Requires daily medication — see special notes carefully.',
       likes: 'Chicken scratch (used to hide his medicine), carrots, apples',
-      dislikes: 'Taking medicine straight',
-      odd_but_ok: 'Will not eat medicated pellets anymore — medicine must be given by hand hidden in chicken scratch.',
+      dislikes: 'Taking medicine straight — will not eat medicated pellets',
+      odd_but_ok: 'Will not eat medicated pellets anymore — medicine must be given by hand hidden in chicken scratch. This is the only way he will take it!',
       evacuationOrder: 3,
       evacuationNote: 'Always load last.',
       special: [
-        '💊 MEDICATION SCHEDULE — Read carefully:',
+        '💊 MEDICATION SCHEDULE — Read carefully, 4 times per day:',
         '💊 BEFORE BREAKFAST: ½ Pergolide (square pink pill) + 3 capsules Thyro-L — hide in a handful of chicken scratch, give by hand.',
         '💊 AROUND NOON: 3 capsules Thyro-L — hide in a handful of chicken scratch, give by hand.',
         '💊 BEFORE DINNER: 3 capsules Thyro-L — hide in a handful of chicken scratch, give by hand.',
@@ -132,7 +132,7 @@ export const RANCH_CONFIG = {
   // ── FEED SCHEDULE ─────────────────────────────────────────
   feedSchedule: [
     {
-      animal: 'Luke',
+      animal: 'Luke (🫏 Donkey)',
       meals: [
         {
           time: 'breakfast',
@@ -155,12 +155,12 @@ export const RANCH_CONFIG = {
       ],
     },
     {
-      animal: 'Luke — Noon Medication',
+      animal: 'Luke — Noon Medication Only',
       meals: [
         {
           time: 'dinner',
           window: '~Noon',
-          items: '3 Thyro-L capsules hidden in a handful of chicken scratch — give by hand. This is a MID-DAY medication check, not a full feeding.',
+          items: '3 Thyro-L capsules hidden in a handful of chicken scratch — give by hand. Mid-day medication only, not a full feeding.',
           hasMed: true,
         },
       ],
@@ -296,7 +296,7 @@ export const RANCH_CONFIG = {
       category: 'vets',
       title: '🏥 Veterinary',
       items: [
-        { name: 'Loomis Basin Equine Medical', role: 'Equine Vet', phone: '9166527645', display: '(916) 652-7645', note: 'Primary equine care — Luke, Snowy, Shadow' },
+        { name: 'Loomis Basin Equine Medical', role: 'Equine Vet', phone: '9166527645', display: '(916) 652-7645', note: 'Primary equine care — Luke (donkey), Snowy & Shadow' },
         { name: 'Dr. De La Cruz', role: 'Equine Vet', phone: '9166527645', display: '(916) 652-7645', note: 'Same clinic as above' },
         { name: 'Cool Veterinary Hospital', role: 'Dogs & Cats Vet', phone: '5306861949', display: '(530) 686-1949', note: 'For dogs and cats' },
       ],
@@ -347,7 +347,7 @@ export const RANCH_CONFIG = {
   // ── TREATS & EXTRAS ───────────────────────────────────────
   treats: [
     {
-      animals: 'Luke, Snowy & Shadow',
+      animals: 'Luke (🫏), Snowy & Shadow',
       emoji: '🐴',
       description: '3–4 medium carrots cut into 1" slices + 1 apple cut into 1x1" pieces — shared among all three equines',
     },
