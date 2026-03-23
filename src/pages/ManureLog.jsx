@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { format, differenceInDays } from 'date-fns'
 import { Plus } from 'lucide-react'
+import { RANCH_CONFIG } from '../data/ranch.config'
 import { listAll, createDoc, COL, Query } from '../lib/appwrite'
 
 export default function ManureLog() {
+  const { manure } = RANCH_CONFIG
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -19,29 +21,20 @@ export default function ManureLog() {
     try {
       const docs = await listAll(COL.manureLog, [Query.orderDesc('spread_date')])
       setLogs(docs)
-    } catch (e) {
-      console.error(e)
+    } catch {
       const saved = localStorage.getItem('rlr_manure_logs')
       if (saved) setLogs(JSON.parse(saved))
       else setError('Could not load logs. Check your Appwrite configuration.')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   async function addLog() {
     setSaving(true)
     try {
-      const data = {
-        spread_date: new Date().toISOString().split('T')[0],
-        notes: form.notes || '',
-        rock_jam_occurred: form.rockJam,
-        rock_jam_notes: form.rockJam ? form.rockJamNotes : '',
-      }
+      const data = { spread_date: new Date().toISOString().split('T')[0], notes: form.notes || '', rock_jam_occurred: form.rockJam, rock_jam_notes: form.rockJam ? form.rockJamNotes : '' }
       const doc = await createDoc(COL.manureLog, data)
       setLogs(prev => [doc, ...prev])
-    } catch (e) {
-      console.error(e)
+    } catch {
       const entry = { $id: Date.now().toString(), spread_date: new Date().toISOString().split('T')[0], notes: form.notes, rock_jam_occurred: form.rockJam, rock_jam_notes: form.rockJamNotes }
       const next = [entry, ...logs]
       setLogs(next)
@@ -55,13 +48,13 @@ export default function ManureLog() {
 
   const lastLog = logs[0] || null
   const daysSince = lastLog ? differenceInDays(new Date(), new Date(lastLog.spread_date || lastLog.date)) : null
-  const isDue = daysSince === null || daysSince >= 3
-  const isOverdue = daysSince !== null && daysSince >= 4
+  const isDue = daysSince === null || daysSince >= manure.frequencyDays
+  const isOverdue = daysSince !== null && daysSince >= (manure.frequencyDays + 1)
 
   return (
     <div>
       <div className="page-title">♻️ Manure Log</div>
-      <div className="page-subtitle">Track manure spreading — every 3–4 days</div>
+      <div className="page-subtitle">Track manure spreading — every {manure.frequencyLabel} days</div>
 
       <div className="manure-tracker" style={{ background: isOverdue ? 'linear-gradient(135deg,#c62828,#b71c1c)' : isDue ? 'linear-gradient(135deg,#E65100,#BF360C)' : 'linear-gradient(135deg,#2E7D32,#1b5e20)' }}>
         {loading ? <div style={{ opacity: 0.7, fontFamily: 'var(--font-heading)' }}>Loading...</div>
@@ -70,14 +63,11 @@ export default function ManureLog() {
               <div className="manure-days">{daysSince}</div>
               <div className="manure-label">days since last spread</div>
               <div style={{ marginTop: 10, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 13 }}>
-                {isOverdue ? '🚨 OVERDUE — spread today!' : isDue ? '⚠️ Due now — time to spread' : `✅ Next due in ${3 - daysSince} day(s)`}
+                {isOverdue ? '🚨 OVERDUE — spread today!' : isDue ? '⚠️ Due now — time to spread' : `✅ Next due in ${manure.frequencyDays - daysSince} day(s)`}
               </div>
             </>
           ) : (
-            <>
-              <div className="manure-days">—</div>
-              <div className="manure-label">No logs yet — log your first spread</div>
-            </>
+            <><div className="manure-days">—</div><div className="manure-label">No logs yet — log your first spread</div></>
           )}
       </div>
 
@@ -85,7 +75,7 @@ export default function ManureLog() {
         <div style={{ fontSize: 20 }}>⚠️</div>
         <div className="alert-content">
           <div className="alert-title">Rock Jam Warning</div>
-          <div className="alert-body">Go slowly — lots of gravel mixed in. If wheels stop turning: <strong>reverse a few inches</strong> to release the jam. Do NOT push through or the clutch bolt will break.</div>
+          <div className="alert-body">{manure.warning}<br /><br /><strong>Fix:</strong> {manure.fixInstructions}</div>
         </div>
       </div>
 
@@ -134,7 +124,7 @@ export default function ManureLog() {
             {form.rockJam && (
               <div className="form-group">
                 <label className="form-label">Rock Jam Notes</label>
-                <textarea className="form-textarea" placeholder="What happened? Did reversing clear it?" value={form.rockJamNotes} onChange={e => setForm({ ...form, rockJamNotes: e.target.value })} />
+                <textarea className="form-textarea" placeholder="What happened?" value={form.rockJamNotes} onChange={e => setForm({ ...form, rockJamNotes: e.target.value })} />
               </div>
             )}
             <div style={{ display: 'flex', gap: 10 }}>

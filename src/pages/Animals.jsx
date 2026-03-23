@@ -1,88 +1,19 @@
 import { useState } from 'react'
-
-const ANIMALS = [
-  {
-    name: 'Shadow', type: 'equine', emoji: '🐴',
-    breed: 'Horse', notes: 'The biggest equine on the ranch.',
-    likes: 'Carrots (sliced), hay',
-    dislikes: null,
-    odd_but_ok: null,
-    special: [
-      '🚨 LOAD FIRST during evacuation. Once Shadow is in, the others usually follow.',
-      'Needs a full 1 flake of hay at night check (others only get ½).',
-    ],
-    badge: 'badge-orange',
-  },
-  {
-    name: 'Luke', type: 'equine', emoji: '🐴',
-    breed: 'Horse', notes: 'Sweet and gentle disposition.',
-    likes: 'Carrots (sliced)',
-    dislikes: null,
-    odd_but_ok: null,
-    special: [
-      '💊 Morning pellets contain medication — always give him his "breakfast" labeled bag.',
-      'Load LAST during evacuation.',
-    ],
-    badge: 'badge-red',
-  },
-  {
-    name: 'Snowy', type: 'equine', emoji: '🐴',
-    breed: 'Horse', notes: 'Calm and cooperative.',
-    likes: 'Carrots (sliced)',
-    dislikes: null,
-    odd_but_ok: null,
-    special: [
-      'Will load into trailer if Shadow refuses. Try Snowy second if Shadow won\'t go.',
-      'Load second in evacuation sequence.',
-    ],
-    badge: 'badge-blue',
-  },
-  {
-    name: 'Shiloh', type: 'dog', emoji: '🐕',
-    breed: 'Dog', notes: 'Sweet girl.',
-    likes: 'Dentastix after breakfast',
-    dislikes: 'Too much water in the evening',
-    odd_but_ok: 'Wets the bed — this is normal and known.',
-    special: [
-      '⚠️ NO water after 6:00 PM or she wets the bed.',
-    ],
-    badge: 'badge-red',
-  },
-  {
-    name: 'Chickens', type: 'chicken', emoji: '🐔',
-    breed: 'Mixed flock', notes: 'Free-ranging during the day.',
-    likes: 'Mealworms and scratch from the cabinet',
-    dislikes: null,
-    odd_but_ok: 'Auto coop door — opens at 6am, closes at 9pm. Do your check at ~8:30pm.',
-    special: [
-      'Check all hens are inside at night check (~8:30pm). Close coop door if open.',
-      'Treat: 2 measuring cup scoops each of mealworms and scratch.',
-    ],
-    badge: 'badge-green',
-  },
-  {
-    name: 'Cats', type: 'cat', emoji: '🐈',
-    breed: 'Ranch cats', notes: 'Outdoor / Mud Room cats.',
-    likes: null,
-    dislikes: 'Being inside the house',
-    odd_but_ok: null,
-    special: [
-      '🚫 Cats are NOT allowed in the house. They are allowed in the Mud Room only.',
-      'Check gravity feeder daily and fill if empty.',
-    ],
-    badge: 'badge-pink',
-  },
-]
+import { RANCH_CONFIG } from '../data/ranch.config'
 
 const TYPE_COLORS = {
-  equine: '#E67E22',
-  dog: '#4A90E2',
-  cat: '#9B59B6',
-  chicken: '#27AE60',
+  equine: '#E67E22', dog: '#4A90E2', cat: '#9B59B6',
+  chicken: '#27AE60', cow: '#8B6914', goat: '#7D5A3C', pig: '#E91E63',
+}
+
+const TYPE_BADGES = {
+  equine: 'badge-orange', dog: 'badge-blue', cat: 'badge-pink',
+  chicken: 'badge-green', cow: 'badge-orange', goat: 'badge-grey', pig: 'badge-pink',
 }
 
 export default function Animals() {
   const [selected, setSelected] = useState(null)
+  const { animals } = RANCH_CONFIG
 
   return (
     <div>
@@ -90,11 +21,11 @@ export default function Animals() {
       <div className="page-subtitle">Profiles, personalities, and special notes</div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-        {ANIMALS.map(animal => (
+        {animals.map(animal => (
           <div
             key={animal.name}
             className="card"
-            style={{ cursor: 'pointer', padding: 14, marginBottom: 0, borderTop: `3px solid ${TYPE_COLORS[animal.type]}` }}
+            style={{ cursor: 'pointer', padding: 14, marginBottom: 0, borderTop: `3px solid ${TYPE_COLORS[animal.type] || 'var(--sky-blue)'}` }}
             onClick={() => setSelected(animal)}
           >
             <div style={{ fontSize: 32, marginBottom: 6 }}>{animal.emoji}</div>
@@ -107,7 +38,6 @@ export default function Animals() {
         ))}
       </div>
 
-      {/* Animal detail modal */}
       {selected && (
         <div className="modal-overlay" onClick={() => setSelected(null)}>
           <div className="modal-sheet" onClick={e => e.stopPropagation()}>
@@ -116,7 +46,7 @@ export default function Animals() {
               <div style={{ fontSize: 48 }}>{selected.emoji}</div>
               <div>
                 <div className="modal-title" style={{ marginBottom: 2 }}>{selected.name}</div>
-                <span className={`badge ${selected.badge}`}>{selected.breed}</span>
+                <span className={`badge ${TYPE_BADGES[selected.type] || 'badge-grey'}`}>{selected.breed}</span>
               </div>
             </div>
 
@@ -127,7 +57,7 @@ export default function Animals() {
               </div>
             )}
 
-            {selected.special && selected.special.length > 0 && (
+            {selected.special?.length > 0 && (
               <div style={{ marginBottom: 16 }}>
                 <div className="form-label">⭐ Special Care Notes</div>
                 {selected.special.map((s, i) => (
@@ -144,14 +74,12 @@ export default function Animals() {
                 <p style={{ fontSize: 14 }}>{selected.likes}</p>
               </div>
             )}
-
             {selected.dislikes && (
               <div style={{ marginBottom: 12 }}>
                 <div className="form-label">😒 Dislikes</div>
                 <p style={{ fontSize: 14 }}>{selected.dislikes}</p>
               </div>
             )}
-
             {selected.odd_but_ok && (
               <div style={{ marginBottom: 12 }}>
                 <div className="form-label">🤔 Odd But OK</div>

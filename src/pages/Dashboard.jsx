@@ -2,34 +2,27 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { AlertTriangle, ChevronRight } from 'lucide-react'
-import { MEAL_TIMES } from '../data/ranchData'
-import { useUser } from '../context/UserContext'
+import { RANCH_CONFIG } from '../data/ranch.config'
+import { useAuth } from '../context/AuthContext'
 
-const QUICK_TASKS = [
-  { id: 'barn_water', label: 'Top off barn water', icon: '💧', time: 'breakfast' },
-  { id: 'equine_breakfast', label: 'Equine breakfast pellets + hay', icon: '🌾', time: 'breakfast', note: "⚠️ Luke's bag has medicine!" },
-  { id: 'chicken_am', label: 'Check chicken feeder & water', icon: '🐔', time: 'breakfast' },
-  { id: 'dog_breakfast', label: 'Dog food + Dentastix', icon: '🐕', time: 'breakfast' },
-  { id: 'cat_food', label: 'Check cat gravity feeder', icon: '🐈', time: 'breakfast' },
-  { id: 'manure_am', label: 'Pick up manure — barn & yards', icon: '♻️', time: 'breakfast' },
-  { id: 'equine_dinner', label: 'Equine dinner pellets + hay', icon: '🌾', time: 'dinner' },
-  { id: 'chicken_pm', label: 'Check chicken feeder & water', icon: '🐔', time: 'dinner' },
-  { id: 'dog_dinner', label: 'Dog dinner (no water for Shiloh after 6pm)', icon: '🐕', time: 'dinner' },
-  { id: 'manure_pm', label: 'Pick up manure — afternoon round', icon: '♻️', time: 'dinner' },
-  { id: 'chicken_night', label: 'Verify all hens in coop (close door if open)', icon: '🐔', time: 'night_check', note: 'Auto-closes 9pm' },
-  { id: 'equine_night', label: 'Night hay — Shadow: 1 flake; Snowy & Luke: ½ flake each', icon: '🌙', time: 'night_check' },
-]
+const MEAL_TIMES = {
+  breakfast:   { label: 'Breakfast',   time: '6:30 – 7:30 AM', icon: '🌅' },
+  dinner:      { label: 'Dinner',      time: '4:00 – 5:30 PM', icon: '🌇' },
+  night_check: { label: 'Night Check', time: '8:00 – 8:30 PM', icon: '🌙' },
+}
 
 function getTimeOfDay() {
   const h = new Date().getHours()
   if (h < 12) return { period: 'breakfast', label: 'Good morning! 🌅', sub: 'Time for morning chores' }
-  if (h < 17) return { period: 'dinner', label: 'Good afternoon! ☀️', sub: 'Afternoon rounds time' }
+  if (h < 17) return { period: 'dinner',    label: 'Good afternoon! ☀️', sub: 'Afternoon rounds time' }
   return { period: 'night_check', label: 'Good evening! 🌙', sub: 'Evening check time' }
 }
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { currentUser } = useUser()
+  const { user } = useAuth()
+  const { dailyTasks, name } = RANCH_CONFIG
+
   const [checked, setChecked] = useState(() => {
     const saved = localStorage.getItem(`rlr_checks_${format(new Date(), 'yyyy-MM-dd')}`)
     return saved ? JSON.parse(saved) : {}
@@ -43,28 +36,26 @@ export default function Dashboard() {
     localStorage.setItem(`rlr_checks_${format(new Date(), 'yyyy-MM-dd')}`, JSON.stringify(next))
   }
 
-  const total = QUICK_TASKS.length
-  const done = QUICK_TASKS.filter(t => checked[t.id]).length
+  const total = dailyTasks.length
+  const done = dailyTasks.filter(t => checked[t.id]).length
   const pct = Math.round((done / total) * 100)
 
   const grouped = {
-    breakfast: QUICK_TASKS.filter(t => t.time === 'breakfast'),
-    dinner: QUICK_TASKS.filter(t => t.time === 'dinner'),
-    night_check: QUICK_TASKS.filter(t => t.time === 'night_check'),
+    breakfast:   dailyTasks.filter(t => t.time === 'breakfast'),
+    dinner:      dailyTasks.filter(t => t.time === 'dinner'),
+    night_check: dailyTasks.filter(t => t.time === 'night_check'),
   }
+
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Sitter'
 
   return (
     <div>
-      {/* Greeting */}
       <div className="greeting-card">
         <div className="greeting-time">{format(new Date(), 'EEEE, MMMM d')}</div>
         <div className="greeting-main">{timeInfo.label}</div>
-        <div className="greeting-sub">
-          {currentUser ? `Welcome, ${currentUser.name}! ${timeInfo.sub}` : timeInfo.sub}
-        </div>
+        <div className="greeting-sub">Welcome, {displayName}! {timeInfo.sub}</div>
       </div>
 
-      {/* Progress bar */}
       <div className="card" style={{ marginBottom: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 14 }}>Today's Progress</span>
@@ -76,7 +67,6 @@ export default function Dashboard() {
         <div style={{ fontSize: 12, color: 'var(--slate-grey)', marginTop: 6 }}>{done} of {total} tasks complete</div>
       </div>
 
-      {/* Evacuation alert */}
       <div className="alert alert-danger" style={{ cursor: 'pointer' }} onClick={() => navigate('/evacuation')}>
         <AlertTriangle size={18} color="var(--danger)" />
         <div className="alert-content">
@@ -86,8 +76,7 @@ export default function Dashboard() {
         <ChevronRight size={18} color="var(--slate-grey)" style={{ marginTop: 2 }} />
       </div>
 
-      {/* Checklists by time period */}
-      {Object.entries(grouped).map(([period, tasks]) => (
+      {Object.entries(grouped).map(([period, tasks]) => tasks.length === 0 ? null : (
         <div key={period} className="card">
           <div className="card-header">
             <div className="card-title">
@@ -112,20 +101,14 @@ export default function Dashboard() {
         </div>
       ))}
 
-      {/* Quick nav cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         {[
           { icon: '🌾', label: 'Feed Schedule', path: '/feed' },
-          { icon: '♻️', label: 'Manure Log', path: '/manure' },
+          { icon: '♻️', label: 'Manure Log',    path: '/manure' },
           { icon: '🏥', label: 'Health Records', path: '/health' },
-          { icon: '🚨', label: 'Emergency', path: '/emergency' },
+          { icon: '🚨', label: 'Emergency',      path: '/emergency' },
         ].map(item => (
-          <button
-            key={item.path}
-            className="card"
-            style={{ cursor: 'pointer', textAlign: 'center', padding: '16px 12px', marginBottom: 0 }}
-            onClick={() => navigate(item.path)}
-          >
+          <button key={item.path} className="card" style={{ cursor: 'pointer', textAlign: 'center', padding: '16px 12px', marginBottom: 0 }} onClick={() => navigate(item.path)}>
             <div style={{ fontSize: 28, marginBottom: 6 }}>{item.icon}</div>
             <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{item.label}</div>
           </button>
