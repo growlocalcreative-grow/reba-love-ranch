@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { UserProvider, useUser, UserPicker } from './context/UserContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
+import LoginScreen from './pages/LoginScreen'
 import Dashboard from './pages/Dashboard'
 import FeedSchedule from './pages/FeedSchedule'
 import DailyCare from './pages/DailyCare'
@@ -13,8 +14,36 @@ import Notes from './pages/Notes'
 import Evacuation from './pages/Evacuation'
 
 function AppRoutes() {
-  const { currentUser } = useUser()
-  if (!currentUser) return <UserPicker />
+  const { user, loading } = useAuth()
+
+  // Show nothing while checking session
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100dvh',
+        background: 'var(--warm-beige)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        <div style={{
+          width: 64, height: 64,
+          background: 'var(--sky-blue)',
+          borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 20, color: 'white',
+        }}>RLR</div>
+        <div style={{ fontFamily: 'var(--font-heading)', fontSize: 13, color: 'var(--slate-grey)' }}>
+          Loading ranch...
+        </div>
+      </div>
+    )
+  }
+
+  // Show login if not authenticated
+  if (!user) return <LoginScreen />
 
   return (
     <BrowserRouter>
@@ -38,8 +67,8 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <UserProvider>
+    <AuthProvider>
       <AppRoutes />
-    </UserProvider>
+    </AuthProvider>
   )
 }
