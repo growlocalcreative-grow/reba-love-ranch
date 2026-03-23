@@ -20,6 +20,7 @@ export const RANCH_CONFIG = {
   tagline: 'Ranch Sitter App',
   location: 'Sierra Nevada Foothills, CA',
   ownerName: 'Karen',
+  ownerEmail: 'growlocalcreative@gmail.com', // ← Owner gets Admin tab
 
   // ── TRUCK / TRAILER NOTES ─────────────────────────────────
   vehicleNotes: {
