@@ -15,12 +15,12 @@
 export const RANCH_CONFIG = {
 
   // ── BRANDING ──────────────────────────────────────────────
-  name: 'Reba Love Ranch',
+  name: 'RebaLove Ranch',
   shortName: 'RLR',
   tagline: 'Ranch Sitter App',
   location: 'Sierra Nevada Foothills, CA',
   ownerName: 'Karen',
-  ownerEmail: 'growlocalcreative@gmail.com', // ← Owner gets Admin tab
+  ownerEmail: 'kmatthews4240@gmail.com', // ← Owner gets Admin tab
 
   // ── TRUCK / TRAILER NOTES ─────────────────────────────────
   vehicleNotes: {
