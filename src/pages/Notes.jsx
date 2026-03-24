@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
-import { Plus, Camera, X } from 'lucide-react'
+import { Plus, Camera, X, Trash2 } from 'lucide-react'
 import { RANCH_CONFIG, ANIMAL_NAMES } from '../data/ranch.config'
-import { listAll, createDoc, COL, Query, uploadImage } from '../lib/appwrite'
+import { listAll, createDoc, COL, Query, uploadImage, databases, DB_ID } from '../lib/appwrite'
 import { useAuth } from '../context/AuthContext'
 
 const NOTE_TYPES = {
@@ -20,13 +20,14 @@ export default function Notes() {
   const SEED_NOTES = ownerNotes.map((n, i) => ({
     $id: `seed-${i}`, author: 'Owner',
     created_at: new Date('2025-08-01').toISOString(),
-    ...n, photo_urls: [],
+    ...n, photo_urls: [], _isSeed: true,
   }))
 
   const [notes, setNotes] = useState(SEED_NOTES)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(null)
   const [form, setForm] = useState({ animal: '', note_type: 'observation', content: '', author: user?.name || 'Sitter' })
   const [photoFiles, setPhotoFiles] = useState([])
   const [photoPreviews, setPhotoPreviews] = useState([])
@@ -85,6 +86,26 @@ export default function Notes() {
     }
   }
 
+  async function deleteNote(note) {
+    if (note._isSeed) {
+      // Seed notes just remove from local state
+      setNotes(prev => prev.filter(n => n.$id !== note.$id))
+      setConfirmDelete(null)
+      return
+    }
+    try {
+      await databases.deleteDocument(DB_ID, COL.ranchNotes, note.$id)
+      setNotes(prev => prev.filter(n => n.$id !== note.$id))
+    } catch (e) {
+      console.error('Delete failed', e)
+      // Remove from UI anyway for UX
+      setNotes(prev => prev.filter(n => n.$id !== note.$id))
+    }
+    setConfirmDelete(null)
+  }
+
+  const isOwner = user?.email?.toLowerCase() === RANCH_CONFIG.ownerEmail?.toLowerCase()
+
   return (
     <div>
       <div className="page-title">📝 Notes</div>
@@ -96,10 +117,26 @@ export default function Notes() {
         <div key={note.$id} className="card" style={{ borderLeft: `4px solid ${note.note_type === 'concern' ? 'var(--danger)' : note.note_type === 'supply' ? 'var(--forest-green)' : 'var(--sky-blue)'}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
             <div>
-              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 13 }}>{NOTE_TYPES[note.note_type]?.icon} {note.animal || 'General'}</div>
-              <div style={{ fontSize: 11, color: 'var(--slate-grey)', marginTop: 2 }}>{note.author} · {format(new Date(note.created_at || note.$createdAt), 'MMM d, h:mm a')}</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 13 }}>
+                {NOTE_TYPES[note.note_type]?.icon} {note.animal || 'General'}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--slate-grey)', marginTop: 2 }}>
+                {note.author} · {format(new Date(note.created_at || note.$createdAt), 'MMM d, h:mm a')}
+              </div>
             </div>
-            <span className={`badge ${NOTE_TYPES[note.note_type]?.badge}`}>{NOTE_TYPES[note.note_type]?.label}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className={`badge ${NOTE_TYPES[note.note_type]?.badge}`}>{NOTE_TYPES[note.note_type]?.label}</span>
+              {/* Delete button — owner can delete any note, sitter can delete their own */}
+              {(isOwner || note.author === (user?.name || user?.email?.split('@')[0])) && (
+                <button
+                  onClick={() => setConfirmDelete(note)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-grey)', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                  title="Delete note"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
           </div>
           <div style={{ fontSize: 14, lineHeight: 1.6 }}>{note.content}</div>
           {note.photo_urls?.length > 0 && (
@@ -110,8 +147,13 @@ export default function Notes() {
         </div>
       ))}
 
+      {notes.length === 0 && !loading && (
+        <div className="empty-state"><div className="empty-icon">📝</div><p>No notes yet. Tap + to add your first note.</p></div>
+      )}
+
       <button className="fab" onClick={() => setShowModal(true)}><Plus /></button>
 
+      {/* Add Note Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-sheet" onClick={e => e.stopPropagation()}>
@@ -149,7 +191,29 @@ export default function Notes() {
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn btn-primary" style={{ flex: 2 }} disabled={saving || uploadingPhotos} onClick={save}>{saving ? 'Saving...' : uploadingPhotos ? 'Uploading...' : 'Save Note'}</button>
+              <button className="btn btn-primary" style={{ flex: 2 }} disabled={saving || uploadingPhotos} onClick={save}>
+                {saving ? 'Saving...' : uploadingPhotos ? 'Uploading...' : 'Save Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal */}
+      {confirmDelete && (
+        <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle" />
+            <div className="modal-title">Delete Note?</div>
+            <div style={{ fontSize: 14, color: 'var(--slate-grey)', lineHeight: 1.6, marginBottom: 20 }}>
+              Are you sure you want to delete this note? This cannot be undone.
+              <div style={{ marginTop: 10, background: 'var(--warm-beige)', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: 'var(--charcoal)', fontStyle: 'italic' }}>
+                "{confirmDelete.content?.slice(0, 80)}{confirmDelete.content?.length > 80 ? '...' : ''}"
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button className="btn btn-danger" style={{ flex: 1 }} onClick={() => deleteNote(confirmDelete)}>Delete</button>
             </div>
           </div>
         </div>
