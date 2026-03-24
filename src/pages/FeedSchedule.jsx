@@ -8,16 +8,37 @@ const MEAL_TIMES = {
   night_check: { label: 'Night Check', time: '8:00 – 8:30 PM', icon: '🌙' },
 }
 
-const TYPE_EMOJI = { equine: '🐴', chicken: '🐔', dog: '🐕', cat: '🐈', cow: '🐄', goat: '🐐', pig: '🐷' }
-const TYPE_BADGE = { equine: 'badge-orange', chicken: 'badge-green', dog: 'badge-blue', cat: 'badge-pink' }
+const TYPE_EMOJI  = { equine: '🐴', chicken: '🐔', dog: '🐕', cat: '🐈', cow: '🐄', goat: '🐐', pig: '🐷', sheep: '🐑', duck: '🦆' }
+const TYPE_BADGE  = { equine: 'badge-orange', chicken: 'badge-green', dog: 'badge-blue', cat: 'badge-pink', cow: 'badge-orange', goat: 'badge-grey' }
+const TYPE_LABEL  = { equine: 'Equines', chicken: 'Chickens', dog: 'Dogs', cat: 'Cats', cow: 'Cattle', goat: 'Goats', pig: 'Pigs', sheep: 'Sheep', duck: 'Fowl' }
 
 export default function FeedSchedule() {
   const { feedSchedule, animals, treats, waterNotes } = RANCH_CONFIG
   const [filter, setFilter] = useState('all')
 
-  const getType = (animalName) => animals.find(a => a.name === animalName)?.type || 'equine'
-  const hasMed = feedSchedule.some(a => a.meals.some(m => m.hasMed))
+  // Look up type by animal name — handles group names like "Dogs", "Cats", "Chickens" too
+  const getType = (animalName) => {
+    // First try exact match in animals array
+    const exactMatch = animals.find(a => a.name === animalName)
+    if (exactMatch) return exactMatch.type
 
+    // Try matching group names to types
+    const nameLower = animalName.toLowerCase()
+    if (nameLower.includes('dog'))     return 'dog'
+    if (nameLower.includes('cat'))     return 'cat'
+    if (nameLower.includes('chicken')) return 'chicken'
+    if (nameLower.includes('cow'))     return 'cow'
+    if (nameLower.includes('goat'))    return 'goat'
+    if (nameLower.includes('pig'))     return 'pig'
+    if (nameLower.includes('sheep'))   return 'sheep'
+    if (nameLower.includes('duck'))    return 'duck'
+    if (nameLower.includes('horse') || nameLower.includes('donkey') || nameLower.includes('pony') || nameLower.includes('mule')) return 'equine'
+
+    // Default to equine for Luke/Snowy/Shadow type names
+    return 'equine'
+  }
+
+  const hasMed = feedSchedule.some(a => a.meals.some(m => m.hasMed))
   const types = ['all', ...new Set(feedSchedule.map(a => getType(a.animal)))]
   const filtered = filter === 'all' ? feedSchedule : feedSchedule.filter(a => getType(a.animal) === filter)
 
@@ -36,14 +57,16 @@ export default function FeedSchedule() {
         </div>
       )}
 
+      {/* Filter chips */}
       <div className="chip-scroll">
         {types.map(t => (
           <button key={t} className={`animal-chip ${filter === t ? 'active' : ''}`} onClick={() => setFilter(t)}>
-            {t === 'all' ? '🐾 All' : `${TYPE_EMOJI[t] || '🐾'} ${t.charAt(0).toUpperCase() + t.slice(1)}s`}
+            {t === 'all' ? '🐾 All' : `${TYPE_EMOJI[t] || '🐾'} ${TYPE_LABEL[t] || t}`}
           </button>
         ))}
       </div>
 
+      {/* Schedule cards */}
       {filtered.map(entry => {
         const type = getType(entry.animal)
         return (
@@ -53,7 +76,9 @@ export default function FeedSchedule() {
                 <span style={{ fontSize: 20 }}>{TYPE_EMOJI[type] || '🐾'}</span>
                 {entry.animal}
               </div>
-              <span className={`badge ${TYPE_BADGE[type] || 'badge-grey'}`}>{type}</span>
+              <span className={`badge ${TYPE_BADGE[type] || 'badge-grey'}`}>
+                {TYPE_LABEL[type] || type}
+              </span>
             </div>
             {entry.meals.map((meal, i) => (
               <div key={i} className="time-block">
@@ -72,6 +97,7 @@ export default function FeedSchedule() {
         )
       })}
 
+      {/* Treats */}
       {treats?.length > 0 && (
         <div className="card">
           <div className="card-title" style={{ marginBottom: 12 }}>🥕 Treats &amp; Extras</div>
@@ -84,6 +110,7 @@ export default function FeedSchedule() {
         </div>
       )}
 
+      {/* Water notes */}
       {waterNotes?.length > 0 && (
         <div className="card">
           <div className="card-title" style={{ marginBottom: 12 }}>💧 Water Notes</div>
