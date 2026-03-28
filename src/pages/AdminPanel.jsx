@@ -458,13 +458,13 @@ export default function AdminPanel() {
                 <div style={{ display: 'flex', gap: 10 }}>
                   <div className="form-group" style={{ flex: 1 }}>
                     <label className="form-label">Evac Order</label>
-                    <select className="form-select" value={form.evacuation_order || 0} onChange={e => set('evacuation_order', Number(e.target.value))}>
-                      <option value={0}>Not trailered</option>
-                      {[1,2,3,4,5].map(n => <option key={n} value={n}>{n === 1 ? '1st — First' : n === 2 ? '2nd' : n === 3 ? '3rd — Last' : `${n}th`}</option>)}
+                    <select className="form-select" value={form.evacuation_order || '0'} onChange={e => set('evacuation_order', e.target.value)}>
+                      <option value="0">Not trailered / N/A</option>
+                      {[1,2,3,4,5].map(n => <option key={n} value={String(n)}>{n === 1 ? '1st — First' : n === 2 ? '2nd' : n === 3 ? '3rd — Last' : `${n}th`}</option>)}
                     </select>
                   </div>
                 </div>
-                {form.evacuation_order > 0 && (
+                {form.evacuation_order && form.evacuation_order !== '0' && (
                   <div className="form-group">
                     <label className="form-label">Evacuation Note</label>
                     <input className="form-input" value={form.evacuation_note || ''} onChange={e => set('evacuation_note', e.target.value)} />

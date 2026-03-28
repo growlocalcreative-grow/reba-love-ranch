@@ -40,9 +40,17 @@ export default function Notes() {
     setLoading(true)
     try {
       const docs = await listAll(COL.ranchNotes, [Query.orderDesc('$createdAt')])
-      if (docs.length > 0) setNotes([...SEED_NOTES, ...docs])
+      // Always merge seed notes + Appwrite notes (even if Appwrite returns 0)
+      const appwriteNotes = docs.map(doc => ({
+        ...doc,
+        // Normalize date field — Appwrite uses $createdAt
+        created_at: doc.created_at || doc.$createdAt,
+      }))
+      setNotes([...SEED_NOTES, ...appwriteNotes])
     } catch (e) {
       console.error('Notes fetch failed', e)
+      // Keep showing seed notes if Appwrite fails
+      setNotes(SEED_NOTES)
     } finally { setLoading(false) }
   }
 
@@ -72,10 +80,19 @@ export default function Notes() {
       setUploadingPhotos(false)
     }
     try {
-      const data = { author: user?.name || form.author || 'Sitter', note_type: form.note_type, animal: form.animal || '', content: form.content, photo_urls: uploadedUrls }
-      const doc = await createDoc(COL.ranchNotes, data)
-      setNotes(prev => [doc, ...prev])
+      const data = {
+        author: user?.name || form.author || 'Sitter',
+        note_type: form.note_type,
+        animal: form.animal || '',
+        content: form.content,
+        photo_urls: uploadedUrls,
+        created_at: new Date().toISOString(),
+      }
+      await createDoc(COL.ranchNotes, data)
+      // Refetch all notes from Appwrite so every device stays in sync
+      await fetchNotes()
     } catch {
+      // Offline fallback — add locally only
       setNotes(prev => [{ $id: Date.now().toString(), ...form, photo_urls: uploadedUrls, created_at: new Date().toISOString() }, ...prev])
     } finally {
       setSaving(false)

@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { AlertTriangle, ChevronRight } from 'lucide-react'
 import { RANCH_CONFIG } from '../data/ranch.config'
 import { useAuth } from '../context/AuthContext'
+import { databases, DB_ID, COL, ID, Query, listAll, createDoc } from '../lib/appwrite'
 
 const MEAL_TIMES = {
   breakfast:   { label: 'Breakfast',   time: '6:30 – 7:30 AM', icon: '🌅' },
@@ -18,27 +19,93 @@ function getTimeOfDay() {
   return { period: 'night_check', label: 'Good evening! 🌙', sub: 'Evening check time' }
 }
 
+const TODAY = format(new Date(), 'yyyy-MM-dd')
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { dailyTasks, name } = RANCH_CONFIG
 
-  const [checked, setChecked] = useState(() => {
-    const saved = localStorage.getItem(`rlr_checks_${format(new Date(), 'yyyy-MM-dd')}`)
-    return saved ? JSON.parse(saved) : {}
-  })
-
+  const [checked, setChecked] = useState({})
+  const [docId, setDocId] = useState(null) // Appwrite document ID for today's completions
+  const [loading, setLoading] = useState(true)
   const timeInfo = getTimeOfDay()
 
-  const toggle = (id) => {
+  // Load today's completions from Appwrite on mount
+  useEffect(() => {
+    loadCompletions()
+  }, [])
+
+  async function loadCompletions() {
+    setLoading(true)
+    try {
+      // Look for today's completion doc
+      const docs = await listAll(COL.taskCompletions, [
+        Query.equal('date', TODAY),
+        Query.limit(1),
+      ])
+
+      if (docs.length > 0) {
+        // Found today's doc — load checked state
+        const doc = docs[0]
+        setDocId(doc.$id)
+        try {
+          const completedIds = JSON.parse(doc.completed_ids || '[]')
+          const checkedMap = {}
+          completedIds.forEach(id => { checkedMap[id] = true })
+          setChecked(checkedMap)
+        } catch {
+          setChecked({})
+        }
+      } else {
+        // No doc for today — fresh start (daily reset!)
+        setChecked({})
+        setDocId(null)
+      }
+    } catch (e) {
+      // Appwrite not available — fall back to localStorage
+      console.warn('Appwrite unavailable, using localStorage', e)
+      const saved = localStorage.getItem(`rlr_checks_${TODAY}`)
+      setChecked(saved ? JSON.parse(saved) : {})
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function toggle(id) {
     const next = { ...checked, [id]: !checked[id] }
     setChecked(next)
-    localStorage.setItem(`rlr_checks_${format(new Date(), 'yyyy-MM-dd')}`, JSON.stringify(next))
+
+    const completedIds = Object.entries(next)
+      .filter(([, v]) => v)
+      .map(([k]) => k)
+
+    try {
+      if (docId) {
+        // Update existing doc
+        await databases.updateDocument(DB_ID, COL.taskCompletions, docId, {
+          completed_ids: JSON.stringify(completedIds),
+          updated_at: new Date().toISOString(),
+        })
+      } else {
+        // Create new doc for today
+        const doc = await createDoc(COL.taskCompletions, {
+          date: TODAY,
+          completed_ids: JSON.stringify(completedIds),
+          updated_at: new Date().toISOString(),
+        })
+        setDocId(doc.$id)
+      }
+    } catch (e) {
+      // Fall back to localStorage if Appwrite fails
+      console.warn('Appwrite save failed, using localStorage', e)
+      localStorage.setItem(`rlr_checks_${TODAY}`, JSON.stringify(next))
+    }
   }
 
   const total = dailyTasks.length
   const done = dailyTasks.filter(t => checked[t.id]).length
-  const pct = Math.round((done / total) * 100)
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
 
   const grouped = {
     breakfast:   dailyTasks.filter(t => t.time === 'breakfast'),
@@ -64,7 +131,9 @@ export default function Dashboard() {
         <div style={{ height: 10, background: 'var(--warm-beige-dark)', borderRadius: 5, overflow: 'hidden' }}>
           <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? 'var(--forest-green)' : 'var(--sky-blue)', borderRadius: 5, transition: 'width 0.3s' }} />
         </div>
-        <div style={{ fontSize: 12, color: 'var(--slate-grey)', marginTop: 6 }}>{done} of {total} tasks complete</div>
+        <div style={{ fontSize: 12, color: 'var(--slate-grey)', marginTop: 6 }}>
+          {loading ? 'Loading...' : `${done} of ${total} tasks complete — synced across all devices ✅`}
+        </div>
       </div>
 
       <div className="alert alert-danger" style={{ cursor: 'pointer' }} onClick={() => navigate('/evacuation')}>
