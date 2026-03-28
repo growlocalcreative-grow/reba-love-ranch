@@ -66,7 +66,7 @@ export async function getAnimals() {
     dislikes: a.dislikes || '',
     odd_but_ok: a.odd_but_ok || '',
     special: JSON.stringify(a.special || []),
-    evacuation_order: a.evacuationOrder || 0,
+    evacuation_order: String(a.evacuationOrder || '0'),
     evacuation_note: a.evacuationNote || '',
     archived: false,
     sort_order: i,
@@ -91,10 +91,11 @@ export async function saveAnimal(animal) {
     dislikes: animal.dislikes || '',
     odd_but_ok: animal.odd_but_ok || '',
     special: JSON.stringify(animal.special || []),
-    evacuation_order: animal.evacuation_order || 0,
+    // evacuation_order is a String in Appwrite — always convert
+    evacuation_order: String(animal.evacuation_order || '0'),
     evacuation_note: animal.evacuation_note || '',
     archived: animal.archived || false,
-    sort_order: animal.sort_order || 0,
+    sort_order: Number(animal.sort_order || 0),
   }
   if (animal.$id && !animal.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.animals, animal.$id, data)
