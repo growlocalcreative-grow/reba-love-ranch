@@ -49,14 +49,10 @@ export default function Dashboard() {
         // Found today's doc — load checked state
         const doc = docs[0]
         setDocId(doc.$id)
-        try {
-          const completedIds = JSON.parse(doc.completed_ids || '[]')
-          const checkedMap = {}
-          completedIds.forEach(id => { checkedMap[id] = true })
-          setChecked(checkedMap)
-        } catch {
-          setChecked({})
-        }
+     const completedIds = doc.completed_ids || []
+const checkedMap = {}
+completedIds.forEach(id => { checkedMap[id] = true })
+setChecked(checkedMap)
       } else {
         // No doc for today — fresh start (daily reset!)
         setChecked({})
@@ -84,14 +80,14 @@ export default function Dashboard() {
       if (docId) {
         // Update existing doc
         await databases.updateDocument(DB_ID, COL.taskCompletions, docId, {
-          completed_ids: JSON.stringify(completedIds),
+          completed_ids: completedIds,
           updated_at: new Date().toISOString(),
         })
       } else {
         // Create new doc for today
         const doc = await createDoc(COL.taskCompletions, {
           date: TODAY,
-          completed_ids: JSON.stringify(completedIds),
+          completed_ids: completedIds,
           updated_at: new Date().toISOString(),
         })
         setDocId(doc.$id)
