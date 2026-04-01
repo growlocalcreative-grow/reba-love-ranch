@@ -68,8 +68,8 @@ export async function getAnimals() {
     special: JSON.stringify(a.special || []),
     evacuation_order: String(a.evacuationOrder || '0'),
     evacuation_note: a.evacuationNote || '',
-    archived: false,
-    sort_order: i,
+    archived: 'false',
+    sort_order: String(i),
   }))
 
   try {
@@ -91,11 +91,10 @@ export async function saveAnimal(animal) {
     dislikes: animal.dislikes || '',
     odd_but_ok: animal.odd_but_ok || '',
     special: JSON.stringify(animal.special || []),
-    // evacuation_order is a String in Appwrite — always convert
     evacuation_order: String(animal.evacuation_order || '0'),
     evacuation_note: animal.evacuation_note || '',
-    archived: animal.archived || false,
-    sort_order: Number(animal.sort_order || 0),
+    archived: String(animal.archived || false),
+    sort_order: String(animal.sort_order || 0),
   }
   if (animal.$id && !animal.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.animals, animal.$id, data)
@@ -104,7 +103,7 @@ export async function saveAnimal(animal) {
 }
 
 export async function archiveAnimal(docId) {
-  return updateDoc(COLLECTIONS.animals, docId, { archived: true })
+  return updateDoc(COLLECTIONS.animals, docId, { archived: 'true' })
 }
 
 export async function deleteAnimal(docId) {
@@ -126,8 +125,8 @@ export async function getFeedSchedule() {
         meal_time: meal.time,
         time_window: meal.window || '',
         items: meal.items || '',
-        has_medication: meal.hasMed || false,
-        sort_order: i,
+        has_medication: String(meal.hasMed || false),
+        sort_order: String(i),
       })
     })
   })
@@ -146,8 +145,8 @@ export async function saveFeedEntry(entry) {
     meal_time: entry.meal_time,
     time_window: entry.time_window || '',
     items: entry.items || '',
-    has_medication: entry.has_medication || false,
-    sort_order: entry.sort_order || 0,
+    has_medication: String(entry.has_medication || false),
+    sort_order: String(entry.sort_order || 0),
   }
   if (entry.$id && !entry.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.feedSchedule, entry.$id, data)
@@ -171,8 +170,8 @@ export async function getDailyTasks() {
     icon: t.icon || '✅',
     time_period: t.time,
     note: t.note || '',
-    active: true,
-    sort_order: i,
+    active: 'true',
+    sort_order: String(i),
   }))
 
   try {
@@ -190,8 +189,8 @@ export async function saveDailyTask(task) {
     icon: task.icon || '✅',
     time_period: task.time_period,
     note: task.note || '',
-    active: task.active !== false,
-    sort_order: task.sort_order || 0,
+    active: String(task.active !== false),
+    sort_order: String(task.sort_order || 0),
   }
   if (task.$id && !task.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.dailyTasks, task.$id, data)
@@ -214,11 +213,11 @@ export async function getPropertyTasks() {
     title: t.title,
     description: t.description || '',
     category: t.category,
-    frequency_days: t.frequency_days || 1,
+    frequency_days: String(t.frequency_days || 1),
     priority: t.priority || 'normal',
     supply_location: t.supply_location || '',
     warning: t.warning || '',
-    sort_order: i,
+    sort_order: String(i),
   }))
 
   try {
@@ -235,11 +234,11 @@ export async function savePropertyTask(task) {
     title: task.title,
     description: task.description || '',
     category: task.category,
-    frequency_days: task.frequency_days || 1,
+    frequency_days: String(task.frequency_days || 1),
     priority: task.priority || 'normal',
     supply_location: task.supply_location || '',
     warning: task.warning || '',
-    sort_order: task.sort_order || 0,
+    sort_order: String(task.sort_order || 0),
   }
   if (task.$id && !task.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.propertyTasks, task.$id, data)
@@ -261,7 +260,7 @@ export async function getTreats() {
     animals: t.animals,
     emoji: t.emoji || '🥕',
     description: t.description,
-    sort_order: i,
+    sort_order: String(i),
   }))
 
   try {
@@ -277,7 +276,7 @@ export async function saveTreat(treat) {
     animals: treat.animals,
     emoji: treat.emoji || '🥕',
     description: treat.description,
-    sort_order: treat.sort_order || 0,
+    sort_order: String(treat.sort_order || 0),
   }
   if (treat.$id && !treat.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.treats, treat.$id, data)
@@ -298,8 +297,8 @@ export async function getWaterNotes() {
   const items = RANCH_CONFIG.waterNotes.map((w, i) => ({
     emoji: w.emoji || '💧',
     note: w.note,
-    urgent: w.urgent || false,
-    sort_order: i,
+    urgent: String(w.urgent || false),
+    sort_order: String(i),
   }))
 
   try {
@@ -314,8 +313,8 @@ export async function saveWaterNote(item) {
   const data = {
     emoji: item.emoji || '💧',
     note: item.note,
-    urgent: item.urgent || false,
-    sort_order: item.sort_order || 0,
+    urgent: String(item.urgent || false),
+    sort_order: String(item.sort_order || 0),
   }
   if (item.$id && !item.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.waterNotes, item.$id, data)
@@ -345,7 +344,7 @@ export async function getContacts() {
         display: c.display || c.phone,
         note: c.note || '',
         address: c.address || '',
-        sort_order: i++,
+        sort_order: String(i++),
       })
     })
   })
@@ -367,7 +366,7 @@ export async function saveContact(contact) {
     display: contact.display || contact.phone,
     note: contact.note || '',
     address: contact.address || '',
-    sort_order: contact.sort_order || 0,
+    sort_order: String(contact.sort_order || 0),
   }
   if (contact.$id && !contact.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.contacts, contact.$id, data)
