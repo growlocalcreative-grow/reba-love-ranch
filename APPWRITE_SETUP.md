@@ -1,4 +1,4 @@
-# 🐴 Reba Love Ranch — Appwrite Cloud Setup Guide
+# 🐴 RebaLove Ranch — Appwrite Cloud Setup Guide
 
 Complete this guide in order. Takes about 15 minutes total in your browser.
 
