@@ -26,7 +26,7 @@ export default function Layout() {
         <div className="header-logo">
           <div className="brand-mark">RLR</div>
           <div className="brand-text">
-            <span className="ranch-name">Reba Love Ranch</span>
+            <span className="ranch-name">RebaLove Ranch</span>
             <span className="ranch-sub">{isOwner ? '🤠 Owner' : 'Ranch Sitter'}</span>
           </div>
         </div>
