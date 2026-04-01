@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, Archive, ChevronRight, Save, X, AlertTriangle, RefreshCw } from 'lucide-react'
 import {
   getAnimals, saveAnimal, archiveAnimal, deleteAnimal, seedAnimals,
-  getFeedSchedule, saveFeedEntry, deleteFeedEntry,
-  getDailyTasks, saveDailyTask, deleteDailyTask,
-  getPropertyTasks, savePropertyTask, deletePropertyTask,
+  getFeedSchedule, saveFeedEntry, deleteFeedEntry, seedFeedSchedule,
+  getDailyTasks, saveDailyTask, deleteDailyTask, seedDailyTasks,
+  getPropertyTasks, savePropertyTask, deletePropertyTask, seedPropertyTasks,
   getTreats, saveTreat, deleteTreat,
-  getWaterNotes, saveWaterNote, deleteWaterNote,
-  getContacts, saveContact, deleteContact,
+  getWaterNotes, saveWaterNote, deleteWaterNote, seedTreatsAndWater,
+  getContacts, saveContact, deleteContact, seedContacts,
 } from '../lib/ranchDataService'
 
 const SECTIONS = [
@@ -271,6 +271,16 @@ export default function AdminPanel() {
       {/* ── FEED SCHEDULE ───────────────────────────────────── */}
       {section === 'feed' && !loading && (
         <>
+          {(Array.isArray(data) ? data : []).length === 0 && (
+            <div className="card" style={{ textAlign: 'center', padding: 24 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🌾</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: 8 }}>No feed schedule found</div>
+              <div style={{ fontSize: 13, color: 'var(--slate-grey)', marginBottom: 16 }}>Tap below to load from the ranch config file.</div>
+              <button className="btn btn-primary btn-full" onClick={async () => { setLoading(true); await seedFeedSchedule(); await loadData('feed') }}>
+                <RefreshCw size={16} /> Load Feed Schedule from Config
+              </button>
+            </div>
+          )}
           {/* Group by animal */}
           {[...new Set((Array.isArray(data) ? data : []).map(d => d.animal_name))].map(animal => (
             <div key={animal} className="card">
@@ -297,6 +307,16 @@ export default function AdminPanel() {
       {/* ── DAILY TASKS ─────────────────────────────────────── */}
       {section === 'tasks' && !loading && (
         <>
+          {(Array.isArray(data) ? data : []).length === 0 && (
+            <div className="card" style={{ textAlign: 'center', padding: 24 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: 8 }}>No daily tasks found</div>
+              <div style={{ fontSize: 13, color: 'var(--slate-grey)', marginBottom: 16 }}>Tap below to load from the ranch config file.</div>
+              <button className="btn btn-primary btn-full" onClick={async () => { setLoading(true); await seedDailyTasks(); await loadData('tasks') }}>
+                <RefreshCw size={16} /> Load Daily Tasks from Config
+              </button>
+            </div>
+          )}
           {['breakfast','dinner','night_check'].map(period => {
             const periodTasks = (Array.isArray(data) ? data : []).filter(t => t.time_period === period)
             if (periodTasks.length === 0) return null
@@ -330,6 +350,16 @@ export default function AdminPanel() {
       {/* ── PROPERTY TASKS ──────────────────────────────────── */}
       {section === 'property' && !loading && (
         <>
+          {(Array.isArray(data) ? data : []).length === 0 && (
+            <div className="card" style={{ textAlign: 'center', padding: 24 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🔧</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: 8 }}>No property tasks found</div>
+              <div style={{ fontSize: 13, color: 'var(--slate-grey)', marginBottom: 16 }}>Tap below to load from the ranch config file.</div>
+              <button className="btn btn-primary btn-full" onClick={async () => { setLoading(true); await seedPropertyTasks(); await loadData('property') }}>
+                <RefreshCw size={16} /> Load Property Tasks from Config
+              </button>
+            </div>
+          )}
           {(Array.isArray(data) ? data : []).map(task => (
             <div key={task.$id} className="card" style={{ borderLeft: `4px solid ${task.priority === 'high' ? 'var(--danger)' : task.priority === 'low' ? 'var(--slate-grey)' : 'var(--sky-blue)'}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
@@ -356,6 +386,16 @@ export default function AdminPanel() {
       {/* ── TREATS & WATER ──────────────────────────────────── */}
       {section === 'treats' && !loading && (
         <>
+          {(data.treats || []).length === 0 && (data.water || []).length === 0 && (
+            <div className="card" style={{ textAlign: 'center', padding: 24 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🥕</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: 8 }}>No treats or water notes found</div>
+              <div style={{ fontSize: 13, color: 'var(--slate-grey)', marginBottom: 16 }}>Tap below to load from the ranch config file.</div>
+              <button className="btn btn-primary btn-full" onClick={async () => { setLoading(true); await seedTreatsAndWater(); await loadData('treats') }}>
+                <RefreshCw size={16} /> Load Treats & Water from Config
+              </button>
+            </div>
+          )}
           <div className="card">
             <div className="card-title">🥕 Treats</div>
             {(data.treats || []).map(treat => (
@@ -396,6 +436,16 @@ export default function AdminPanel() {
       {/* ── EMERGENCY CONTACTS ──────────────────────────────── */}
       {section === 'contacts' && !loading && (
         <>
+          {(Array.isArray(data) ? data : []).length === 0 && (
+            <div className="card" style={{ textAlign: 'center', padding: 24 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📞</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: 8 }}>No contacts found</div>
+              <div style={{ fontSize: 13, color: 'var(--slate-grey)', marginBottom: 16 }}>Tap below to load from the ranch config file.</div>
+              <button className="btn btn-primary btn-full" onClick={async () => { setLoading(true); await seedContacts(); await loadData('contacts') }}>
+                <RefreshCw size={16} /> Load Contacts from Config
+              </button>
+            </div>
+          )}
           {['vets','owner','neighbors','evacuation'].map(cat => {
             const catContacts = (Array.isArray(data) ? data : []).filter(c => c.category === cat)
             const labels = { vets: '🏥 Veterinary', owner: '👨‍👩‍👧 Owner & Family', neighbors: '🏡 Neighbors', evacuation: '🚨 Evacuation' }
