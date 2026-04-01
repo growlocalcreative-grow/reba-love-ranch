@@ -64,7 +64,7 @@ export function UserPicker() {
           <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 22, color: 'white' }}>RLR</span>
         </div>
         <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 26, color: 'var(--charcoal)', marginBottom: 6 }}>
-          Reba Love Ranch
+          RebaLove Ranch
         </div>
         <div style={{ fontSize: 14, color: 'var(--slate-grey)', fontWeight: 600 }}>
           Who's checking in today?
