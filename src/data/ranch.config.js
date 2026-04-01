@@ -1,5 +1,5 @@
 // ============================================================
-// 🐴 RANCH CONFIGURATION FILE — REBA LOVE RANCH
+// 🐴 RANCH CONFIGURATION FILE — REBALOVE RANCH
 // ============================================================
 // This is the ONLY file you need to edit for a new ranch.
 // Everything else — pages, UI, logic — stays exactly the same.
