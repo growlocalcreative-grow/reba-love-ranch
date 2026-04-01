@@ -73,7 +73,7 @@ export async function seedAnimals() {
     evacuation_order: String(a.evacuationOrder || '0'),
     evacuation_note: a.evacuationNote || '',
     archived: 'false',
-    sort_order: String(i),
+    sort_order: i,
   }))
 
   // Create each animal document one by one
@@ -135,7 +135,7 @@ export async function getFeedSchedule() {
         time_window: meal.window || '',
         items: meal.items || '',
         has_medication: meal.hasMed === true || meal.hasMed === 'true',
-        sort_order: String(i),
+        sort_order: i,
       })
     })
   })
@@ -180,7 +180,7 @@ export async function getDailyTasks() {
     time_period: t.time,
     note: t.note || '',
     active: true,
-    sort_order: String(i),
+    sort_order: i,
   }))
 
   try {
@@ -226,7 +226,7 @@ export async function getPropertyTasks() {
     priority: t.priority || 'normal',
     supply_location: t.supply_location || '',
     warning: t.warning || '',
-    sort_order: String(i),
+    sort_order: i,
   }))
 
   try {
@@ -269,7 +269,7 @@ export async function getTreats() {
     animals: t.animals,
     emoji: t.emoji || '🥕',
     description: t.description,
-    sort_order: String(i),
+    sort_order: i,
   }))
 
   try {
@@ -307,7 +307,7 @@ export async function getWaterNotes() {
     emoji: w.emoji || '💧',
     note: w.note,
     urgent: w.urgent === true || w.urgent === 'true',
-    sort_order: String(i),
+    sort_order: i,
   }))
 
   try {
@@ -419,7 +419,7 @@ export async function seedDailyTasks() {
     time_period: t.time,
     note: t.note || '',
     active: true,
-    sort_order: String(i),
+    sort_order: i,
   }))
   const created = []
   for (const item of items) {
@@ -439,7 +439,7 @@ export async function seedPropertyTasks() {
     priority: t.priority || 'normal',
     supply_location: t.supply_location || '',
     warning: t.warning || '',
-    sort_order: String(i),
+    sort_order: i,
   }))
   const created = []
   for (const item of items) {
@@ -454,13 +454,13 @@ export async function seedTreatsAndWater() {
     animals: t.animals,
     emoji: t.emoji || '🥕',
     description: t.description,
-    sort_order: String(i),
+    sort_order: i,
   }))
   const water = RANCH_CONFIG.waterNotes.map((w, i) => ({
     emoji: w.emoji || '💧',
     note: w.note,
     urgent: w.urgent === true || w.urgent === 'true',
-    sort_order: String(i),
+    sort_order: i,
   }))
   for (const item of treats) {
     try { await createDoc(COLLECTIONS.treats, item) }
