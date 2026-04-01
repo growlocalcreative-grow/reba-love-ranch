@@ -1,6 +1,6 @@
-# 🐴 Reba Love Ranch — Ranch Sitter PWA (Appwrite Edition)
+# 🐴 RebaLove Ranch — Ranch Sitter PWA (Appwrite Edition)
 
-A mobile-first Progressive Web App for ranch sitting at Reba Love Ranch in the Sierra Nevada foothills. 
+A mobile-first Progressive Web App for ranch sitting at RebaLove Ranch in the Sierra Nevada foothills. 
 
 ## Stack
 
