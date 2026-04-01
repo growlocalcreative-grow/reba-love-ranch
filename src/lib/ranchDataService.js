@@ -134,7 +134,7 @@ export async function getFeedSchedule() {
         meal_time: meal.time,
         time_window: meal.window || '',
         items: meal.items || '',
-        has_medication: String(meal.hasMed || false),
+        has_medication: meal.hasMed === true || meal.hasMed === 'true',
         sort_order: String(i),
       })
     })
@@ -154,7 +154,7 @@ export async function saveFeedEntry(entry) {
     meal_time: entry.meal_time,
     time_window: entry.time_window || '',
     items: entry.items || '',
-    has_medication: String(entry.has_medication || false),
+    has_medication: entry.has_medication === true || entry.has_medication === 'true',
     sort_order: String(entry.sort_order || 0),
   }
   if (entry.$id && !entry.$id.startsWith('local-')) {
@@ -179,7 +179,7 @@ export async function getDailyTasks() {
     icon: t.icon || '✅',
     time_period: t.time,
     note: t.note || '',
-    active: 'true',
+    active: true,
     sort_order: String(i),
   }))
 
@@ -198,7 +198,7 @@ export async function saveDailyTask(task) {
     icon: task.icon || '✅',
     time_period: task.time_period,
     note: task.note || '',
-    active: String(task.active !== false),
+    active: task.active !== false && task.active !== 'false',
     sort_order: String(task.sort_order || 0),
   }
   if (task.$id && !task.$id.startsWith('local-')) {
@@ -306,7 +306,7 @@ export async function getWaterNotes() {
   const items = RANCH_CONFIG.waterNotes.map((w, i) => ({
     emoji: w.emoji || '💧',
     note: w.note,
-    urgent: String(w.urgent || false),
+    urgent: w.urgent === true || w.urgent === 'true',
     sort_order: String(i),
   }))
 
@@ -322,7 +322,7 @@ export async function saveWaterNote(item) {
   const data = {
     emoji: item.emoji || '💧',
     note: item.note,
-    urgent: String(item.urgent || false),
+    urgent: item.urgent === true || item.urgent === 'true',
     sort_order: String(item.sort_order || 0),
   }
   if (item.$id && !item.$id.startsWith('local-')) {
@@ -398,7 +398,7 @@ export async function seedFeedSchedule() {
         meal_time: meal.time,
         time_window: meal.window || '',
         items: meal.items || '',
-        has_medication: String(meal.hasMed || false),
+        has_medication: meal.hasMed === true || meal.hasMed === 'true',
         sort_order: String(ei * 10 + i),
       })
     })
@@ -418,7 +418,7 @@ export async function seedDailyTasks() {
     icon: t.icon || '✅',
     time_period: t.time,
     note: t.note || '',
-    active: 'true',
+    active: true,
     sort_order: String(i),
   }))
   const created = []
@@ -459,7 +459,7 @@ export async function seedTreatsAndWater() {
   const water = RANCH_CONFIG.waterNotes.map((w, i) => ({
     emoji: w.emoji || '💧',
     note: w.note,
-    urgent: String(w.urgent || false),
+    urgent: w.urgent === true || w.urgent === 'true',
     sort_order: String(i),
   }))
   for (const item of treats) {
