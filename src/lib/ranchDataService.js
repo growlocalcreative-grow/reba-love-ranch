@@ -244,11 +244,11 @@ export async function savePropertyTask(task) {
     description: task.description || '',
     category: task.category,
     // The Number() wrapper + || fallback ensures we NEVER send a string or NaN
-    frequency_days: Number(parseInt(task.frequency_days, 10)) || 1,
+    frequency_days: String(task.frequency_days || 1),
     priority: task.priority || 'normal',
     supply_location: task.supply_location || '',
     warning: task.warning || '',
-    sort_order: Number(parseInt(task.sort_order, 10)) || 0,
+    sort_order: String(task.sort_order || 0),
   }
   
   if (task.$id && !task.$id.startsWith('local-')) {
