@@ -55,7 +55,11 @@ export async function getAnimals() {
   const docs = await listDocs(COLLECTIONS.animals, [Query.orderAsc('sort_order')])
   if (docs && docs.length > 0) return docs
 
-  // Seed from config
+  // No docs found — seed from config
+  return await seedAnimals()
+}
+
+export async function seedAnimals() {
   const items = RANCH_CONFIG.animals.map((a, i) => ({
     name: a.name,
     type: a.type,
@@ -72,12 +76,17 @@ export async function getAnimals() {
     sort_order: String(i),
   }))
 
-  try {
-    await seedCollection(COLLECTIONS.animals, items)
-    return listDocs(COLLECTIONS.animals, [Query.orderAsc('sort_order')])
-  } catch {
-    return RANCH_CONFIG.animals.map((a, i) => ({ ...a, $id: `local-${i}`, archived: false }))
+  // Create each animal document one by one
+  const created = []
+  for (const item of items) {
+    try {
+      const doc = await createDoc(COLLECTIONS.animals, item)
+      created.push(doc)
+    } catch (e) {
+      console.error('Failed to seed animal:', item.name, e)
+    }
   }
+  return created
 }
 
 export async function saveAnimal(animal) {
