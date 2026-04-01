@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Reba Love Ranch',
+        name: 'RebaLove Ranch',
         short_name: 'RLR',
-        description: 'Ranch Sitting App for Reba Love Ranch',
+        description: 'Ranch Sitting App for RebaLove Ranch',
         theme_color: '#4A90E2',
         background_color: '#FDF3E1',
         display: 'standalone',
