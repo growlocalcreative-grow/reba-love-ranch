@@ -386,3 +386,114 @@ export async function saveContact(contact) {
 export async function deleteContact(docId) {
   return deleteDoc(COLLECTIONS.contacts, docId)
 }
+
+// ── MANUAL SEED FUNCTIONS (called when collections are empty) ─
+
+export async function seedFeedSchedule() {
+  const items = []
+  RANCH_CONFIG.feedSchedule.forEach((entry, ei) => {
+    entry.meals.forEach((meal, i) => {
+      items.push({
+        animal_name: entry.animal,
+        meal_time: meal.time,
+        time_window: meal.window || '',
+        items: meal.items || '',
+        has_medication: String(meal.hasMed || false),
+        sort_order: String(ei * 10 + i),
+      })
+    })
+  })
+  const created = []
+  for (const item of items) {
+    try { created.push(await createDoc(COLLECTIONS.feedSchedule, item)) }
+    catch (e) { console.error('Seed feed failed:', e) }
+  }
+  return created
+}
+
+export async function seedDailyTasks() {
+  const items = RANCH_CONFIG.dailyTasks.map((t, i) => ({
+    task_id: t.id,
+    label: t.label,
+    icon: t.icon || '✅',
+    time_period: t.time,
+    note: t.note || '',
+    active: 'true',
+    sort_order: String(i),
+  }))
+  const created = []
+  for (const item of items) {
+    try { created.push(await createDoc(COLLECTIONS.dailyTasks, item)) }
+    catch (e) { console.error('Seed task failed:', e) }
+  }
+  return created
+}
+
+export async function seedPropertyTasks() {
+  const items = RANCH_CONFIG.propertyTasks.map((t, i) => ({
+    task_key: t.id,
+    title: t.title,
+    description: t.description || '',
+    category: t.category,
+    frequency_days: String(t.frequency_days || 1),
+    priority: t.priority || 'normal',
+    supply_location: t.supply_location || '',
+    warning: t.warning || '',
+    sort_order: String(i),
+  }))
+  const created = []
+  for (const item of items) {
+    try { created.push(await createDoc(COLLECTIONS.propertyTasks, item)) }
+    catch (e) { console.error('Seed property task failed:', e) }
+  }
+  return created
+}
+
+export async function seedTreatsAndWater() {
+  const treats = RANCH_CONFIG.treats.map((t, i) => ({
+    animals: t.animals,
+    emoji: t.emoji || '🥕',
+    description: t.description,
+    sort_order: String(i),
+  }))
+  const water = RANCH_CONFIG.waterNotes.map((w, i) => ({
+    emoji: w.emoji || '💧',
+    note: w.note,
+    urgent: String(w.urgent || false),
+    sort_order: String(i),
+  }))
+  for (const item of treats) {
+    try { await createDoc(COLLECTIONS.treats, item) }
+    catch (e) { console.error('Seed treat failed:', e) }
+  }
+  for (const item of water) {
+    try { await createDoc(COLLECTIONS.waterNotes, item) }
+    catch (e) { console.error('Seed water note failed:', e) }
+  }
+  return true
+}
+
+export async function seedContacts() {
+  const items = []
+  let i = 0
+  RANCH_CONFIG.emergencyContacts.forEach(group => {
+    group.items.forEach(c => {
+      items.push({
+        category: group.category,
+        name: c.name,
+        role: c.role || '',
+        phone: c.phone,
+        display: c.display || c.phone,
+        note: c.note || '',
+        address: c.address || '',
+        sort_order: String(i++),
+      })
+    })
+  })
+  const created = []
+  for (const item of items) {
+    try { created.push(await createDoc(COLLECTIONS.contacts, item)) }
+    catch (e) { console.error('Seed contact failed:', e) }
+  }
+  return created
+}
