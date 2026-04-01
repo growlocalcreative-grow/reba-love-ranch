@@ -257,6 +257,9 @@ export async function savePropertyTask(task) {
   return createDoc(COLLECTIONS.propertyTasks, data)
 }
 
+export async function deletePropertyTask(docId) {
+  return deleteDoc(COLLECTIONS.propertyTasks, docId)
+}
 // ── TREATS ────────────────────────────────────────────────────
 
 export async function getTreats() {
