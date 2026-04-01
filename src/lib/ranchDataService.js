@@ -243,14 +243,12 @@ export async function savePropertyTask(task) {
     title: task.title,
     description: task.description || '',
     category: task.category,
-    // The Number() wrapper + || fallback ensures we NEVER send a string or NaN
-    frequency_days: String(task.frequency_days || 1),
+    frequency_days: parseInt(task.frequency_days || 1) || 1,
     priority: task.priority || 'normal',
     supply_location: task.supply_location || '',
     warning: task.warning || '',
-    sort_order: String(task.sort_order || 0),
+    sort_order: parseInt(task.sort_order || 0) || 0,
   }
-  
   if (task.$id && !task.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.propertyTasks, task.$id, data)
   }
@@ -260,6 +258,7 @@ export async function savePropertyTask(task) {
 export async function deletePropertyTask(docId) {
   return deleteDoc(COLLECTIONS.propertyTasks, docId)
 }
+
 // ── TREATS ────────────────────────────────────────────────────
 
 export async function getTreats() {
