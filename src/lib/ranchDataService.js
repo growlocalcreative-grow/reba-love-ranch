@@ -243,20 +243,18 @@ export async function savePropertyTask(task) {
     title: task.title,
     description: task.description || '',
     category: task.category,
-    frequency_days: parseInt(task.frequency_days || 1, 10),
+    // The Number() wrapper + || fallback ensures we NEVER send a string or NaN
+    frequency_days: Number(parseInt(task.frequency_days, 10)) || 1,
     priority: task.priority || 'normal',
     supply_location: task.supply_location || '',
     warning: task.warning || '',
-    sort_order: parseInt(task.sort_order || 0) || 0,
+    sort_order: Number(parseInt(task.sort_order, 10)) || 0,
   }
+  
   if (task.$id && !task.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.propertyTasks, task.$id, data)
   }
   return createDoc(COLLECTIONS.propertyTasks, data)
-}
-
-export async function deletePropertyTask(docId) {
-  return deleteDoc(COLLECTIONS.propertyTasks, docId)
 }
 
 // ── TREATS ────────────────────────────────────────────────────
