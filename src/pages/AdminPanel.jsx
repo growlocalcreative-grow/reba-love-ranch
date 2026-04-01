@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Edit2, Archive, ChevronRight, Save, X, AlertTriangle } from 'lucide-react'
+import { Plus, Trash2, Edit2, Archive, ChevronRight, Save, X, AlertTriangle, RefreshCw } from 'lucide-react'
 import {
-  getAnimals, saveAnimal, archiveAnimal, deleteAnimal,
+  getAnimals, saveAnimal, archiveAnimal, deleteAnimal, seedAnimals,
   getFeedSchedule, saveFeedEntry, deleteFeedEntry,
   getDailyTasks, saveDailyTask, deleteDailyTask,
   getPropertyTasks, savePropertyTask, deletePropertyTask,
@@ -210,7 +210,28 @@ export default function AdminPanel() {
       {/* ── ANIMALS ─────────────────────────────────────────── */}
       {section === 'animals' && !loading && (
         <>
-          {(Array.isArray(data) ? data : []).filter(a => !a.archived).map(animal => (
+          {/* No animals found — show re-seed button */}
+          {(Array.isArray(data) ? data : []).filter(a => a.archived !== true && a.archived !== 'true').length === 0 &&
+           (Array.isArray(data) ? data : []).filter(a => a.archived === true || a.archived === 'true').length === 0 && (
+            <div className="card" style={{ textAlign: 'center', padding: 24 }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🐴</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, marginBottom: 8 }}>No animals found</div>
+              <div style={{ fontSize: 13, color: 'var(--slate-grey)', marginBottom: 16 }}>
+                Tap below to load your animals from the ranch config file.
+              </div>
+              <button
+                className="btn btn-primary btn-full"
+                onClick={async () => {
+                  setLoading(true)
+                  await seedAnimals()
+                  await loadData('animals')
+                }}
+              >
+                <RefreshCw size={16} /> Load Animals from Config
+              </button>
+            </div>
+          )}
+          {(Array.isArray(data) ? data : []).filter(a => a.archived !== true && a.archived !== 'true').map(animal => (
             <div key={animal.$id} className="card" style={{ borderLeft: '4px solid var(--sky-blue)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                 <span style={{ fontSize: 28 }}>{animal.emoji}</span>
@@ -227,10 +248,10 @@ export default function AdminPanel() {
           ))}
 
           {/* Archived */}
-          {(Array.isArray(data) ? data : []).some(a => a.archived) && (
+          {(Array.isArray(data) ? data : []).some(a => a.archived === true || a.archived === 'true') && (
             <div className="card" style={{ background: 'var(--warm-beige)', border: '1px dashed var(--slate-grey)' }}>
               <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 13, marginBottom: 10, color: 'var(--slate-grey)' }}>🌈 Archived Animals</div>
-              {(Array.isArray(data) ? data : []).filter(a => a.archived).map(a => (
+              {(Array.isArray(data) ? data : []).filter(a => a.archived === true || a.archived === 'true').map(a => (
                 <div key={a.$id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', opacity: 0.6 }}>
                   <span>{a.emoji}</span>
                   <span style={{ fontSize: 13, flex: 1 }}>{a.name}</span>
