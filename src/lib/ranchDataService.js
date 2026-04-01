@@ -243,7 +243,7 @@ export async function savePropertyTask(task) {
     title: task.title,
     description: task.description || '',
     category: task.category,
-    frequency_days: parseInt(task.frequency_days || 1) || 1,
+    frequency_days: parseInt(task.frequency_days || 1, 10),
     priority: task.priority || 'normal',
     supply_location: task.supply_location || '',
     warning: task.warning || '',
