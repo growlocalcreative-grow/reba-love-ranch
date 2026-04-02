@@ -13,22 +13,37 @@ const TYPE_BADGES = {
 
 /**
  * Defensively parse the special field.
- * Handles three real-world cases found in the database:
- *   1. Already a JS array              -> return as-is
- *   2. JSON string ["note1","note2"]   -> parse once
- *   3. Double/triple encoded string    -> parse repeatedly until array
+ * Real data has three encoding depths:
+ *   Sunny/Teddy  → clean array or single-encoded string  (1 parse)
+ *   Luke/Snowy   → double-encoded string                 (2 parses)
+ *   Shadow/Chix  → triple-encoded string                 (3 parses)
+ *
+ * Key fix: on JSON.parse failure we DON'T exit — we keep the last
+ * successfully parsed value and break, so partial progress is kept.
  */
 function parseSpecial(raw) {
   if (Array.isArray(raw)) return raw
   if (!raw) return []
+
   let value = raw
-  for (let i = 0; i < 4; i++) {
+  let last = raw
+
+  for (let i = 0; i < 5; i++) {
     if (Array.isArray(value)) return value
-    if (typeof value !== 'string') return []
-    try { value = JSON.parse(value) }
-    catch { return [value] }
+    if (typeof value !== 'string') break
+    try {
+      const parsed = JSON.parse(value)
+      last = parsed   // save progress
+      value = parsed
+    } catch {
+      break           // can't parse further — use last successful result
+    }
   }
-  return Array.isArray(value) ? value : []
+
+  if (Array.isArray(last)) return last
+  // Last resort: wrap the raw string as a single item so something shows
+  if (typeof last === 'string' && last.trim()) return [last]
+  return []
 }
 
 function hasWarning(special) {
