@@ -54,14 +54,11 @@ export default function Dashboard() {
       if (docs.length > 0) {
         const doc = docs[0]
         setDocId(doc.$id)
-        try {
-          const completedIds = JSON.parse(doc.completed_ids || '[]')
-          const checkedMap = {}
-          completedIds.forEach(id => { checkedMap[id] = true })
-          setChecked(checkedMap)
-        } catch {
-          setChecked({})
-        }
+        // completed_ids is a String[] in Appwrite — no JSON.parse needed
+        const completedIds = Array.isArray(doc.completed_ids) ? doc.completed_ids : []
+        const checkedMap = {}
+        completedIds.forEach(id => { checkedMap[id] = true })
+        setChecked(checkedMap)
       } else {
         setChecked({})
         setDocId(null)
@@ -81,6 +78,7 @@ export default function Dashboard() {
     const next = { ...checked, [taskId]: !checked[taskId] }
     setChecked(next)
 
+    // Send as a real array — Appwrite expects String[] not a JSON string
     const completedIds = Object.entries(next)
       .filter(([, v]) => v)
       .map(([k]) => k)
@@ -88,13 +86,13 @@ export default function Dashboard() {
     try {
       if (docId) {
         await databases.updateDocument(DB_ID, COL.taskCompletions, docId, {
-          completed_ids: JSON.stringify(completedIds),
+          completed_ids: completedIds,
           updated_at: new Date().toISOString(),
         })
       } else {
         const doc = await createDoc(COL.taskCompletions, {
           date: TODAY,
-          completed_ids: JSON.stringify(completedIds),
+          completed_ids: completedIds,
           updated_at: new Date().toISOString(),
         })
         setDocId(doc.$id)
