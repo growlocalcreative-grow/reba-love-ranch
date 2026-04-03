@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { RANCH_CONFIG } from '../data/ranch.config'
+import { useState, useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import { getFeedSchedule, getTreats, getWaterNotes } from '../lib/ranchDataService'
 
 const MEAL_TIMES = {
   breakfast:   { label: 'Breakfast',   time: '6:30 – 7:30 AM', icon: '🌅' },
@@ -12,41 +12,121 @@ const TYPE_EMOJI  = { equine: '🐴', chicken: '🐔', dog: '🐕', cat: '🐈',
 const TYPE_BADGE  = { equine: 'badge-orange', chicken: 'badge-green', dog: 'badge-blue', cat: 'badge-pink', cow: 'badge-orange', goat: 'badge-grey' }
 const TYPE_LABEL  = { equine: 'Equines', chicken: 'Chickens', dog: 'Dogs', cat: 'Cats', cow: 'Cattle', goat: 'Goats', pig: 'Pigs', sheep: 'Sheep', duck: 'Fowl' }
 
+// Infer animal type from name string — keyword based since
+// animal_name in feed_schedule_edit doesn't always match animals_edit exactly
+function getType(name) {
+  const n = name.toLowerCase()
+  if (n.includes('dog'))                                                    return 'dog'
+  if (n.includes('cat'))                                                    return 'cat'
+  if (n.includes('chicken'))                                                return 'chicken'
+  if (n.includes('cow'))                                                    return 'cow'
+  if (n.includes('goat'))                                                   return 'goat'
+  if (n.includes('pig'))                                                    return 'pig'
+  if (n.includes('sheep'))                                                  return 'sheep'
+  if (n.includes('duck'))                                                   return 'duck'
+  if (n.includes('horse') || n.includes('donkey') || n.includes('pony') || n.includes('mule')) return 'equine'
+  return 'equine' // sensible default for named equines like Luke, Shadow, Snowy
+}
+
+/**
+ * Group flat Appwrite rows by animal_name, preserving meal order.
+ * Input:  [{ animal_name, meal_time, time_window, items, has_medication, sort_order }]
+ * Output: [{ animal, meals: [{ time, window, items, hasMed }] }]
+ */
+function groupByAnimal(rows) {
+  const map = new Map()
+  const order = []
+
+  // Sort by sort_order within each animal group first
+  const sorted = [...rows].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+
+  sorted.forEach(row => {
+    if (!map.has(row.animal_name)) {
+      map.set(row.animal_name, [])
+      order.push(row.animal_name)
+    }
+    map.get(row.animal_name).push({
+      $id:    row.$id,
+      time:   row.meal_time,
+      window: row.time_window || '',
+      items:  row.items || '',
+      hasMed: row.has_medication === true || row.has_medication === 'true',
+    })
+  })
+
+  return order.map(name => ({ animal: name, meals: map.get(name) }))
+}
+
 export default function FeedSchedule() {
-  const { feedSchedule, animals, treats, waterNotes } = RANCH_CONFIG
-  const [filter, setFilter] = useState('all')
+  const [schedule, setSchedule]     = useState([])   // grouped by animal
+  const [treats, setTreats]         = useState([])
+  const [waterNotes, setWaterNotes] = useState([])
+  const [filter, setFilter]         = useState('all')
+  const [loading, setLoading]       = useState(true)
 
-  // Look up type by animal name — handles group names like "Dogs", "Cats", "Chickens" too
-  const getType = (animalName) => {
-    // First try exact match in animals array
-    const exactMatch = animals.find(a => a.name === animalName)
-    if (exactMatch) return exactMatch.type
+  // ── Load all three collections on mount ──────────────────────
+  useEffect(() => { loadAll() }, [])
 
-    // Try matching group names to types
-    const nameLower = animalName.toLowerCase()
-    if (nameLower.includes('dog'))     return 'dog'
-    if (nameLower.includes('cat'))     return 'cat'
-    if (nameLower.includes('chicken')) return 'chicken'
-    if (nameLower.includes('cow'))     return 'cow'
-    if (nameLower.includes('goat'))    return 'goat'
-    if (nameLower.includes('pig'))     return 'pig'
-    if (nameLower.includes('sheep'))   return 'sheep'
-    if (nameLower.includes('duck'))    return 'duck'
-    if (nameLower.includes('horse') || nameLower.includes('donkey') || nameLower.includes('pony') || nameLower.includes('mule')) return 'equine'
-
-    // Default to equine for Luke/Snowy/Shadow type names
-    return 'equine'
+  async function loadAll() {
+    setLoading(true)
+    try {
+      const [rows, treatsData, waterData] = await Promise.all([
+        getFeedSchedule(),
+        getTreats(),
+        getWaterNotes(),
+      ])
+      setSchedule(groupByAnimal(rows || []))
+      setTreats(
+        [...(treatsData || [])]
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      )
+      setWaterNotes(
+        [...(waterData || [])]
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      )
+    } catch (e) {
+      console.error('FeedSchedule load failed', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const hasMed = feedSchedule.some(a => a.meals.some(m => m.hasMed))
-  const types = ['all', ...new Set(feedSchedule.map(a => getType(a.animal)))]
-  const filtered = filter === 'all' ? feedSchedule : feedSchedule.filter(a => getType(a.animal) === filter)
+  // ── Derived values ───────────────────────────────────────────
+  const hasMed   = schedule.some(a => a.meals.some(m => m.hasMed))
+  const types    = ['all', ...new Set(schedule.map(a => getType(a.animal)))]
+  const filtered = filter === 'all'
+    ? schedule
+    : schedule.filter(a => getType(a.animal) === filter)
+
+  // ── Loading state ────────────────────────────────────────────
+  if (loading) return (
+    <div>
+      <div className="page-title">🌾 Feed Schedule</div>
+      <div className="page-subtitle">Daily feeding times &amp; portions for all animals</div>
+      <div className="card" style={{ textAlign: 'center', padding: 32, color: 'var(--slate-grey)' }}>
+        Loading feed schedule...
+      </div>
+    </div>
+  )
+
+  // ── Empty state ──────────────────────────────────────────────
+  if (schedule.length === 0) return (
+    <div>
+      <div className="page-title">🌾 Feed Schedule</div>
+      <div className="page-subtitle">Daily feeding times &amp; portions for all animals</div>
+      <div className="card" style={{ textAlign: 'center', padding: 32, color: 'var(--slate-grey)' }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>🌾</div>
+        <div>No feed schedule found. Ask the owner to set one up in the Admin Panel.</div>
+      </div>
+    </div>
+  )
 
   return (
     <div>
       <div className="page-title">🌾 Feed Schedule</div>
       <div className="page-subtitle">Daily feeding times &amp; portions for all animals</div>
 
+      {/* ── Medication warning ── */}
       {hasMed && (
         <div className="alert alert-danger">
           <AlertTriangle size={18} color="var(--danger)" />
@@ -57,16 +137,20 @@ export default function FeedSchedule() {
         </div>
       )}
 
-      {/* Filter chips */}
+      {/* ── Filter chips ── */}
       <div className="chip-scroll">
         {types.map(t => (
-          <button key={t} className={`animal-chip ${filter === t ? 'active' : ''}`} onClick={() => setFilter(t)}>
+          <button
+            key={t}
+            className={`animal-chip ${filter === t ? 'active' : ''}`}
+            onClick={() => setFilter(t)}
+          >
             {t === 'all' ? '🐾 All' : `${TYPE_EMOJI[t] || '🐾'} ${TYPE_LABEL[t] || t}`}
           </button>
         ))}
       </div>
 
-      {/* Schedule cards */}
+      {/* ── Schedule cards — now driven by Appwrite ── */}
       {filtered.map(entry => {
         const type = getType(entry.animal)
         return (
@@ -81,7 +165,7 @@ export default function FeedSchedule() {
               </span>
             </div>
             {entry.meals.map((meal, i) => (
-              <div key={i} className="time-block">
+              <div key={meal.$id || i} className="time-block">
                 <div className="time-block-header">
                   {MEAL_TIMES[meal.time]?.icon} {MEAL_TIMES[meal.time]?.label} — {meal.window}
                 </div>
@@ -97,27 +181,34 @@ export default function FeedSchedule() {
         )
       })}
 
-      {/* Treats */}
-      {treats?.length > 0 && (
+      {/* ── Treats — from treats_edit ── */}
+      {treats.length > 0 && (
         <div className="card">
           <div className="card-title" style={{ marginBottom: 12 }}>🥕 Treats &amp; Extras</div>
-          {treats.map((t, i) => (
-            <div key={i} className="check-row" style={{ cursor: 'default' }}>
+          {treats.map(t => (
+            <div key={t.$id} className="check-row" style={{ cursor: 'default' }}>
               <span style={{ fontSize: 20 }}>{t.emoji}</span>
-              <div className="check-label"><strong>{t.animals}</strong> — {t.description}</div>
+              <div className="check-label">
+                <strong>{t.animals}</strong> — {t.description}
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Water notes */}
-      {waterNotes?.length > 0 && (
+      {/* ── Water notes — from water_notes_edit ── */}
+      {waterNotes.length > 0 && (
         <div className="card">
           <div className="card-title" style={{ marginBottom: 12 }}>💧 Water Notes</div>
-          {waterNotes.map((w, i) => (
-            <div key={i} className="check-row" style={{ cursor: 'default' }}>
+          {waterNotes.map(w => (
+            <div key={w.$id} className="check-row" style={{ cursor: 'default' }}>
               <span style={{ fontSize: 20 }}>{w.emoji}</span>
-              <div className="check-label" style={w.urgent ? { color: 'var(--danger)', fontWeight: 600 } : {}}>
+              <div
+                className="check-label"
+                style={w.urgent === true || w.urgent === 'true'
+                  ? { color: 'var(--danger)', fontWeight: 600 }
+                  : {}}
+              >
                 {w.note}
               </div>
             </div>
