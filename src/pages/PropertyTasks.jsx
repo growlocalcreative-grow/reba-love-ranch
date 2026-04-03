@@ -63,6 +63,7 @@ export default function PropertyTasks() {
     setSaving(true)
     try {
       const doc = await createDoc(COL.taskCompletions, {
+        date:         new Date().toISOString().split("T")[0],
         task_id:      task.task_key,
         task_title:   task.title,
         completed_at: new Date().toISOString(),
@@ -72,6 +73,7 @@ export default function PropertyTasks() {
     } catch {
       const fallback = {
         $id:          Date.now().toString(),
+        date:         new Date().toISOString().split("T")[0],
         task_id:      task.task_key,
         completed_at: new Date().toISOString(),
         notes:        completeNotes,
