@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getAnimals } from '../lib/ranchDataService'
+import { parseSpecial } from '../lib/parseSpecial'
 
 const TYPE_COLORS = {
   equine: '#E67E22', dog: '#4A90E2', cat: '#9B59B6',
@@ -9,41 +10,6 @@ const TYPE_COLORS = {
 const TYPE_BADGES = {
   equine: 'badge-orange', dog: 'badge-blue', cat: 'badge-pink',
   chicken: 'badge-green', cow: 'badge-orange', goat: 'badge-grey', pig: 'badge-pink',
-}
-
-/**
- * Defensively parse the special field.
- * Real data has three encoding depths:
- *   Sunny/Teddy  → clean array or single-encoded string  (1 parse)
- *   Luke/Snowy   → double-encoded string                 (2 parses)
- *   Shadow/Chix  → triple-encoded string                 (3 parses)
- *
- * Key fix: on JSON.parse failure we DON'T exit — we keep the last
- * successfully parsed value and break, so partial progress is kept.
- */
-function parseSpecial(raw) {
-  if (Array.isArray(raw)) return raw
-  if (!raw) return []
-
-  let value = raw
-  let last = raw
-
-  for (let i = 0; i < 5; i++) {
-    if (Array.isArray(value)) return value
-    if (typeof value !== 'string') break
-    try {
-      const parsed = JSON.parse(value)
-      last = parsed   // save progress
-      value = parsed
-    } catch {
-      break           // can't parse further — use last successful result
-    }
-  }
-
-  if (Array.isArray(last)) return last
-  // Last resort: wrap the raw string as a single item so something shows
-  if (typeof last === 'string' && last.trim()) return [last]
-  return []
 }
 
 function hasWarning(special) {
