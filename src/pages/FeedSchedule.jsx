@@ -4,6 +4,7 @@ import { getFeedSchedule, getTreats, getWaterNotes } from '../lib/ranchDataServi
 
 const MEAL_TIMES = {
   breakfast:   { label: 'Breakfast',   time: '6:30 – 7:30 AM', icon: '🌅' },
+  mid_day:     { label: 'Mid-Day',     time: '12:00 – 1:00 PM', icon: '☀️' }, // New Category
   dinner:      { label: 'Dinner',      time: '4:00 – 5:30 PM', icon: '🌇' },
   night_check: { label: 'Night Check', time: '8:00 – 8:30 PM', icon: '🌙' },
 }
