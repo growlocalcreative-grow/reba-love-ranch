@@ -20,7 +20,7 @@ const SECTIONS = [
 ]
 
 const ANIMAL_TYPES = ['equine','dog','cat','chicken','cow','goat','sheep','pig','duck']
-const MEAL_TIMES = ['breakfast','dinner','night_check']
+const MEAL_TIMES = ['breakfast','mid_day','dinner','night_check']
 const TASK_TIMES = ['breakfast','dinner','night_check']
 const PRIORITIES = ['high','normal','low']
 const CATEGORIES_TASK = ['daily','every_few_days','weekly','as_needed']
