@@ -1,32 +1,30 @@
 /**
- * Defensively parse the `special` field from animals_edit.
- * Real data has three encoding depths due to historical double/triple
- * JSON.stringify calls during early seeding.
+ * Parse the `special` field from animals_edit.
  *
- *   Clean (Sunny/Teddy)  → already an array or single-encoded string
- *   Double (Luke/Snowy)  → needs two parses
- *   Triple (Shadow/Chix) → needs three parses
+ * After the April 2026 data migration all records are clean —
+ * special is stored as a single JSON.stringify'd array.
+ *
+ * We keep a light defensive fallback for any future records
+ * that might arrive double-encoded via the Admin Panel.
  */
 export function parseSpecial(raw) {
+  // Already a proper array — ideal case
   if (Array.isArray(raw)) return raw
   if (!raw) return []
 
-  let value = raw
-  let last = raw
-
-  for (let i = 0; i < 5; i++) {
-    if (Array.isArray(value)) return value
-    if (typeof value !== 'string') break
-    try {
-      const parsed = JSON.parse(value)
-      last = parsed
-      value = parsed
-    } catch {
-      break
+  // Single parse — the normal case after migration
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed
+    // Double-encoded edge case — parse once more
+    if (typeof parsed === 'string') {
+      try {
+        const again = JSON.parse(parsed)
+        if (Array.isArray(again)) return again
+      } catch {}
     }
-  }
+  } catch {}
 
-  if (Array.isArray(last)) return last
-  if (typeof last === 'string' && last.trim()) return [last]
-  return []
+  // Last resort — treat raw string as single item
+  return typeof raw === 'string' && raw.trim() ? [raw] : []
 }
