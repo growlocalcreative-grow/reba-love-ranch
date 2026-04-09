@@ -1,9 +1,14 @@
 /**
  * Ranch Data Service
  * Handles all Appwrite reads/writes for editable ranch data.
- * Falls back to ranch.config.js if Appwrite isn't seeded yet.
+ * Seeds from ranch.config.js if Appwrite collections are empty.
+ *
+ * ── RULE ─────────────────────────────────────────────────────
+ * UI components must NEVER import from ranch.config.js directly.
+ * All data flows through this service → Appwrite → UI.
+ * ranch.config.js is seed-only + a few runtime constants.
  */
-import { databases, ID, Query, DB_ID } from './appwrite'
+import { databases, ID, Query, DB_ID, RANCH_ID } from './appwrite'
 import { RANCH_CONFIG } from '../data/ranch.config'
 
 // ── Collection IDs ────────────────────────────────────────────
@@ -28,8 +33,12 @@ async function listDocs(colId, queries = []) {
   }
 }
 
+// All creates automatically tag with ranch_id for future multi-tenant support
 async function createDoc(colId, data) {
-  return databases.createDocument(DB_ID, colId, ID.unique(), data)
+  return databases.createDocument(DB_ID, colId, ID.unique(), {
+    ...data,
+    ranch_id: RANCH_ID,
+  })
 }
 
 async function updateDoc(colId, docId, data) {
@@ -40,8 +49,7 @@ async function deleteDoc(colId, docId) {
   return databases.deleteDocument(DB_ID, colId, docId)
 }
 
-// ── SEED helpers (run once on first admin load) ───────────────
-
+// Seed helper — strips Appwrite system fields before inserting
 async function seedCollection(colId, items) {
   for (const item of items) {
     const { $id, $createdAt, $updatedAt, $permissions, $collectionId, $databaseId, ...clean } = item
@@ -54,29 +62,26 @@ async function seedCollection(colId, items) {
 export async function getAnimals() {
   const docs = await listDocs(COLLECTIONS.animals, [Query.orderAsc('sort_order')])
   if (docs && docs.length > 0) return docs
-
-  // No docs found — seed from config
   return await seedAnimals()
 }
 
 export async function seedAnimals() {
   const items = RANCH_CONFIG.animals.map((a, i) => ({
-    name: a.name,
-    type: a.type,
-    breed: a.breed || '',
-    emoji: a.emoji || '🐾',
-    notes: a.notes || '',
-    likes: a.likes || '',
-    dislikes: a.dislikes || '',
-    odd_but_ok: a.odd_but_ok || '',
-    special: JSON.stringify(a.special || []),
+    name:             a.name,
+    type:             a.type,
+    breed:            a.breed || '',
+    emoji:            a.emoji || '🐾',
+    notes:            a.notes || '',
+    likes:            a.likes || '',
+    dislikes:         a.dislikes || '',
+    odd_but_ok:       a.odd_but_ok || '',
+    special:          JSON.stringify(a.special || []),
     evacuation_order: parseInt(a.evacuationOrder || '0') || 0,
-    evacuation_note: a.evacuationNote || '',
-    archived: 'false',
-    sort_order: parseInt(i) || 0,
+    evacuation_note:  a.evacuationNote || '',
+    archived:         'false',
+    sort_order:       parseInt(i) || 0,
   }))
 
-  // Create each animal document one by one
   const created = []
   for (const item of items) {
     try {
@@ -91,19 +96,19 @@ export async function seedAnimals() {
 
 export async function saveAnimal(animal) {
   const data = {
-    name: animal.name,
-    type: animal.type,
-    breed: animal.breed || '',
-    emoji: animal.emoji || '🐾',
-    notes: animal.notes || '',
-    likes: animal.likes || '',
-    dislikes: animal.dislikes || '',
-    odd_but_ok: animal.odd_but_ok || '',
-    special: JSON.stringify(animal.special || []),
+    name:             animal.name,
+    type:             animal.type,
+    breed:            animal.breed || '',
+    emoji:            animal.emoji || '🐾',
+    notes:            animal.notes || '',
+    likes:            animal.likes || '',
+    dislikes:         animal.dislikes || '',
+    odd_but_ok:       animal.odd_but_ok || '',
+    special:          JSON.stringify(animal.special || []),
     evacuation_order: parseInt(animal.evacuation_order || '0') || 0,
-    evacuation_note: animal.evacuation_note || '',
-    archived: String(animal.archived || false),
-    sort_order: parseInt(animal.sort_order || 0) || 0,
+    evacuation_note:  animal.evacuation_note || '',
+    archived:         String(animal.archived || false),
+    sort_order:       parseInt(animal.sort_order || 0) || 0,
   }
   if (animal.$id && !animal.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.animals, animal.$id, data)
@@ -125,17 +130,16 @@ export async function getFeedSchedule() {
   const docs = await listDocs(COLLECTIONS.feedSchedule, [Query.orderAsc('animal_name')])
   if (docs && docs.length > 0) return docs
 
-  // Seed from config
   const items = []
   RANCH_CONFIG.feedSchedule.forEach(entry => {
     entry.meals.forEach((meal, i) => {
       items.push({
-        animal_name: entry.animal,
-        meal_time: meal.time,
-        time_window: meal.window || '',
-        items: meal.items || '',
+        animal_name:    entry.animal,
+        meal_time:      meal.time,
+        time_window:    meal.window || '',
+        items:          meal.items || '',
         has_medication: meal.hasMed === true || meal.hasMed === 'true',
-        sort_order: parseInt(i) || 0,
+        sort_order:     parseInt(i) || 0,
       })
     })
   })
@@ -150,12 +154,12 @@ export async function getFeedSchedule() {
 
 export async function saveFeedEntry(entry) {
   const data = {
-    animal_name: entry.animal_name,
-    meal_time: entry.meal_time,
-    time_window: entry.time_window || '',
-    items: entry.items || '',
+    animal_name:    entry.animal_name,
+    meal_time:      entry.meal_time,
+    time_window:    entry.time_window || '',
+    items:          entry.items || '',
     has_medication: entry.has_medication === true || entry.has_medication === 'true',
-    sort_order: parseInt(entry.sort_order || 0) || 0,
+    sort_order:     parseInt(entry.sort_order || 0) || 0,
   }
   if (entry.$id && !entry.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.feedSchedule, entry.$id, data)
@@ -174,13 +178,13 @@ export async function getDailyTasks() {
   if (docs && docs.length > 0) return docs
 
   const items = RANCH_CONFIG.dailyTasks.map((t, i) => ({
-    task_id: t.id,
-    label: t.label,
-    icon: t.icon || '✅',
+    task_id:     t.id,
+    label:       t.label,
+    icon:        t.icon || '✅',
     time_period: t.time,
-    note: t.note || '',
-    active: true,
-    sort_order: parseInt(i) || 0,
+    note:        t.note || '',
+    active:      true,
+    sort_order:  parseInt(i) || 0,
   }))
 
   try {
@@ -193,13 +197,13 @@ export async function getDailyTasks() {
 
 export async function saveDailyTask(task) {
   const data = {
-    task_id: task.task_id || ID.unique(),
-    label: task.label,
-    icon: task.icon || '✅',
+    task_id:     task.task_id || ID.unique(),
+    label:       task.label,
+    icon:        task.icon || '✅',
     time_period: task.time_period,
-    note: task.note || '',
-    active: task.active !== false && task.active !== 'false',
-    sort_order: parseInt(task.sort_order || 0) || 0,
+    note:        task.note || '',
+    active:      task.active !== false && task.active !== 'false',
+    sort_order:  parseInt(task.sort_order || 0) || 0,
   }
   if (task.$id && !task.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.dailyTasks, task.$id, data)
@@ -218,15 +222,15 @@ export async function getPropertyTasks() {
   if (docs && docs.length > 0) return docs
 
   const items = RANCH_CONFIG.propertyTasks.map((t, i) => ({
-    task_key: t.id,
-    title: t.title,
-    description: t.description || '',
-    category: t.category,
-    frequency_days: parseInt(t.frequency_days || 1) || 1,
-    priority: t.priority || 'normal',
+    task_key:        t.id,
+    title:           t.title,
+    description:     t.description || '',
+    category:        t.category,
+    frequency_days:  parseInt(t.frequency_days || 1) || 1,
+    priority:        t.priority || 'normal',
     supply_location: t.supply_location || '',
-    warning: t.warning || '',
-    sort_order: parseInt(i) || 0,
+    warning:         t.warning || '',
+    sort_order:      parseInt(i) || 0,
   }))
 
   try {
@@ -239,15 +243,15 @@ export async function getPropertyTasks() {
 
 export async function savePropertyTask(task) {
   const data = {
-    task_key: task.task_key || task.id || ID.unique(),
-    title: task.title,
-    description: task.description || '',
-    category: task.category,
-    frequency_days: parseInt(task.frequency_days || 1) || 1,
-    priority: task.priority || 'normal',
+    task_key:        task.task_key || task.id || ID.unique(),
+    title:           task.title,
+    description:     task.description || '',
+    category:        task.category,
+    frequency_days:  parseInt(task.frequency_days || 1) || 1,
+    priority:        task.priority || 'normal',
     supply_location: task.supply_location || '',
-    warning: task.warning || '',
-    sort_order: parseInt(task.sort_order || 0) || 0,
+    warning:         task.warning || '',
+    sort_order:      parseInt(task.sort_order || 0) || 0,
   }
   if (task.$id && !task.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.propertyTasks, task.$id, data)
@@ -266,10 +270,10 @@ export async function getTreats() {
   if (docs && docs.length > 0) return docs
 
   const items = RANCH_CONFIG.treats.map((t, i) => ({
-    animals: t.animals,
-    emoji: t.emoji || '🥕',
+    animals:     t.animals,
+    emoji:       t.emoji || '🥕',
     description: t.description,
-    sort_order: parseInt(i) || 0,
+    sort_order:  parseInt(i) || 0,
   }))
 
   try {
@@ -282,10 +286,10 @@ export async function getTreats() {
 
 export async function saveTreat(treat) {
   const data = {
-    animals: treat.animals,
-    emoji: treat.emoji || '🥕',
+    animals:     treat.animals,
+    emoji:       treat.emoji || '🥕',
     description: treat.description,
-    sort_order: parseInt(treat.sort_order || 0) || 0,
+    sort_order:  parseInt(treat.sort_order || 0) || 0,
   }
   if (treat.$id && !treat.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.treats, treat.$id, data)
@@ -304,9 +308,9 @@ export async function getWaterNotes() {
   if (docs && docs.length > 0) return docs
 
   const items = RANCH_CONFIG.waterNotes.map((w, i) => ({
-    emoji: w.emoji || '💧',
-    note: w.note,
-    urgent: w.urgent === true || w.urgent === 'true',
+    emoji:      w.emoji || '💧',
+    note:       w.note,
+    urgent:     w.urgent === true || w.urgent === 'true',
     sort_order: parseInt(i) || 0,
   }))
 
@@ -320,9 +324,9 @@ export async function getWaterNotes() {
 
 export async function saveWaterNote(item) {
   const data = {
-    emoji: item.emoji || '💧',
-    note: item.note,
-    urgent: item.urgent === true || item.urgent === 'true',
+    emoji:      item.emoji || '💧',
+    note:       item.note,
+    urgent:     item.urgent === true || item.urgent === 'true',
     sort_order: parseInt(item.sort_order || 0) || 0,
   }
   if (item.$id && !item.$id.startsWith('local-')) {
@@ -347,12 +351,12 @@ export async function getContacts() {
     group.items.forEach(c => {
       items.push({
         category: group.category,
-        name: c.name,
-        role: c.role || '',
-        phone: c.phone,
-        display: c.display || c.phone,
-        note: c.note || '',
-        address: c.address || '',
+        name:     c.name,
+        role:     c.role || '',
+        phone:    c.phone,
+        display:  c.display || c.phone,
+        note:     c.note || '',
+        address:  c.address || '',
         sort_order: parseInt(i++) || 0,
       })
     })
@@ -368,13 +372,13 @@ export async function getContacts() {
 
 export async function saveContact(contact) {
   const data = {
-    category: contact.category,
-    name: contact.name,
-    role: contact.role || '',
-    phone: contact.phone,
-    display: contact.display || contact.phone,
-    note: contact.note || '',
-    address: contact.address || '',
+    category:   contact.category,
+    name:       contact.name,
+    role:       contact.role || '',
+    phone:      contact.phone,
+    display:    contact.display || contact.phone,
+    note:       contact.note || '',
+    address:    contact.address || '',
     sort_order: parseInt(contact.sort_order || 0) || 0,
   }
   if (contact.$id && !contact.$id.startsWith('local-')) {
@@ -387,19 +391,19 @@ export async function deleteContact(docId) {
   return deleteDoc(COLLECTIONS.contacts, docId)
 }
 
-// ── MANUAL SEED FUNCTIONS (called when collections are empty) ─
+// ── MANUAL SEED FUNCTIONS (Admin Panel "Load from Config") ────
 
 export async function seedFeedSchedule() {
   const items = []
   RANCH_CONFIG.feedSchedule.forEach((entry, ei) => {
     entry.meals.forEach((meal, i) => {
       items.push({
-        animal_name: entry.animal,
-        meal_time: meal.time,
-        time_window: meal.window || '',
-        items: meal.items || '',
+        animal_name:    entry.animal,
+        meal_time:      meal.time,
+        time_window:    meal.window || '',
+        items:          meal.items || '',
         has_medication: meal.hasMed === true || meal.hasMed === 'true',
-        sort_order: parseInt(ei * 10 + i) || 0,
+        sort_order:     parseInt(ei * 10 + i) || 0,
       })
     })
   })
@@ -413,13 +417,13 @@ export async function seedFeedSchedule() {
 
 export async function seedDailyTasks() {
   const items = RANCH_CONFIG.dailyTasks.map((t, i) => ({
-    task_id: t.id,
-    label: t.label,
-    icon: t.icon || '✅',
+    task_id:     t.id,
+    label:       t.label,
+    icon:        t.icon || '✅',
     time_period: t.time,
-    note: t.note || '',
-    active: true,
-    sort_order: parseInt(i) || 0,
+    note:        t.note || '',
+    active:      true,
+    sort_order:  parseInt(i) || 0,
   }))
   const created = []
   for (const item of items) {
@@ -431,15 +435,15 @@ export async function seedDailyTasks() {
 
 export async function seedPropertyTasks() {
   const items = RANCH_CONFIG.propertyTasks.map((t, i) => ({
-    task_key: t.id,
-    title: t.title,
-    description: t.description || '',
-    category: t.category,
-    frequency_days: parseInt(t.frequency_days || 1) || 1,
-    priority: t.priority || 'normal',
+    task_key:        t.id,
+    title:           t.title,
+    description:     t.description || '',
+    category:        t.category,
+    frequency_days:  parseInt(t.frequency_days || 1) || 1,
+    priority:        t.priority || 'normal',
     supply_location: t.supply_location || '',
-    warning: t.warning || '',
-    sort_order: parseInt(i) || 0,
+    warning:         t.warning || '',
+    sort_order:      parseInt(i) || 0,
   }))
   const created = []
   for (const item of items) {
@@ -451,15 +455,15 @@ export async function seedPropertyTasks() {
 
 export async function seedTreatsAndWater() {
   const treats = RANCH_CONFIG.treats.map((t, i) => ({
-    animals: t.animals,
-    emoji: t.emoji || '🥕',
+    animals:     t.animals,
+    emoji:       t.emoji || '🥕',
     description: t.description,
-    sort_order: parseInt(i) || 0,
+    sort_order:  parseInt(i) || 0,
   }))
   const water = RANCH_CONFIG.waterNotes.map((w, i) => ({
-    emoji: w.emoji || '💧',
-    note: w.note,
-    urgent: w.urgent === true || w.urgent === 'true',
+    emoji:      w.emoji || '💧',
+    note:       w.note,
+    urgent:     w.urgent === true || w.urgent === 'true',
     sort_order: parseInt(i) || 0,
   }))
   for (const item of treats) {
@@ -480,12 +484,12 @@ export async function seedContacts() {
     group.items.forEach(c => {
       items.push({
         category: group.category,
-        name: c.name,
-        role: c.role || '',
-        phone: c.phone,
-        display: c.display || c.phone,
-        note: c.note || '',
-        address: c.address || '',
+        name:     c.name,
+        role:     c.role || '',
+        phone:    c.phone,
+        display:  c.display || c.phone,
+        note:     c.note || '',
+        address:  c.address || '',
         sort_order: parseInt(i++) || 0,
       })
     })
