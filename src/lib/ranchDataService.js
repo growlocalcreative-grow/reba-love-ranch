@@ -17,44 +17,27 @@ export const COLLECTIONS = {
   contacts:      import.meta.env.VITE_COL_CONTACTS_EDIT       || 'contacts_edit',
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ── Generic helpers ───────────────────────────────────────────
 
-/** List all documents in a collection */
-export async function listAll(collectionId, queries = []) {
-  const res = await databases.listDocuments(DB_ID, collectionId, [
-    Query.limit(500),
-    ...queries,
-  ])
-  return res.documents
+async function listDocs(colId, queries = []) {
+  try {
+    const res = await databases.listDocuments(DB_ID, colId, [Query.limit(200), ...queries])
+    return res.documents
+  } catch {
+    return null // collection not seeded yet
+  }
 }
 
-/** Create a document — automatically tags with ranch_id */
-export async function createDoc(collectionId, data) {
-  return databases.createDocument(DB_ID, collectionId, ID.unique(), {
-    ...data,
-    ranch_id: RANCH_ID,
-  })
+async function createDoc(colId, data) {
+  return databases.createDocument(DB_ID, colId, ID.unique(), data)
 }
 
-/** Update a document */
-export async function updateDoc(collectionId, docId, data) {
-  return databases.updateDocument(DB_ID, collectionId, docId, data)
+async function updateDoc(colId, docId, data) {
+  return databases.updateDocument(DB_ID, colId, docId, data)
 }
 
-/** Delete a document */
-export async function deleteDoc(collectionId, docId) {
-  return databases.deleteDocument(DB_ID, collectionId, docId)
-}
-
-/** Upload an image file to Appwrite Storage */
-export async function uploadImage(file) {
-  const uploaded = await storage.createFile(BUCKET_ID, ID.unique(), file)
-  return storage.getFilePreview(BUCKET_ID, uploaded.$id).toString()
-}
-
-/** Get a file preview URL from a stored file ID */
-export function getFileUrl(fileId) {
-  return storage.getFilePreview(BUCKET_ID, fileId).toString()
+async function deleteDoc(colId, docId) {
+  return databases.deleteDocument(DB_ID, colId, docId)
 }
 
 // ── SEED helpers (run once on first admin load) ───────────────
