@@ -1,13 +1,10 @@
 /**
  * Ranch Data Service
  * Handles all Appwrite reads/writes for editable ranch data.
- * Updated for Multi-Tenancy (VITE_RANCH_ID) and strict Type Safety.
+ * Falls back to ranch.config.js if Appwrite isn't seeded yet.
  */
 import { databases, ID, Query, DB_ID } from './appwrite'
 import { RANCH_CONFIG } from '../data/ranch.config'
-
-// The specific ID for this ranch instance (from Vercel Env Vars)
-const VITE_RANCH_ID = import.meta.env.VITE_RANCH_ID || 'rebalove-ranch';
 
 // ── Collection IDs ────────────────────────────────────────────
 export const COLLECTIONS = {
@@ -24,25 +21,15 @@ export const COLLECTIONS = {
 
 async function listDocs(colId, queries = []) {
   try {
-    const res = await databases.listDocuments(DB_ID, colId, [
-      Query.equal('ranch_id', VITE_RANCH_ID), // Filter by this ranch
-      Query.limit(200), 
-      ...queries
-    ])
+    const res = await databases.listDocuments(DB_ID, colId, [Query.limit(200), ...queries])
     return res.documents
-  } catch (error) {
-    console.error(`Error listing ${colId}:`, error);
-    return null 
+  } catch {
+    return null // collection not seeded yet
   }
 }
 
 async function createDoc(colId, data) {
-  // Automatically inject the ranch_id into every new document
-  const dataWithTenant = {
-    ...data,
-    ranch_id: VITE_RANCH_ID
-  };
-  return databases.createDocument(DB_ID, colId, ID.unique(), dataWithTenant)
+  return databases.createDocument(DB_ID, colId, ID.unique(), data)
 }
 
 async function updateDoc(colId, docId, data) {
@@ -67,6 +54,8 @@ async function seedCollection(colId, items) {
 export async function getAnimals() {
   const docs = await listDocs(COLLECTIONS.animals, [Query.orderAsc('sort_order')])
   if (docs && docs.length > 0) return docs
+
+  // No docs found — seed from config
   return await seedAnimals()
 }
 
@@ -81,12 +70,13 @@ export async function seedAnimals() {
     dislikes: a.dislikes || '',
     odd_but_ok: a.odd_but_ok || '',
     special: JSON.stringify(a.special || []),
-    evacuation_order: String(a.evacuationOrder || '0'), // Type fix: String
+    evacuation_order: parseInt(a.evacuationOrder || '0') || 0,
     evacuation_note: a.evacuationNote || '',
     archived: 'false',
-    sort_order: String(i), // Type fix: String
+    sort_order: parseInt(i) || 0,
   }))
 
+  // Create each animal document one by one
   const created = []
   for (const item of items) {
     try {
@@ -110,10 +100,10 @@ export async function saveAnimal(animal) {
     dislikes: animal.dislikes || '',
     odd_but_ok: animal.odd_but_ok || '',
     special: JSON.stringify(animal.special || []),
-    evacuation_order: String(animal.evacuation_order || '0'), // Type fix: String
+    evacuation_order: parseInt(animal.evacuation_order || '0') || 0,
     evacuation_note: animal.evacuation_note || '',
     archived: String(animal.archived || false),
-    sort_order: String(animal.sort_order || 0), // Type fix: String
+    sort_order: parseInt(animal.sort_order || 0) || 0,
   }
   if (animal.$id && !animal.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.animals, animal.$id, data)
@@ -135,6 +125,7 @@ export async function getFeedSchedule() {
   const docs = await listDocs(COLLECTIONS.feedSchedule, [Query.orderAsc('animal_name')])
   if (docs && docs.length > 0) return docs
 
+  // Seed from config
   const items = []
   RANCH_CONFIG.feedSchedule.forEach(entry => {
     entry.meals.forEach((meal, i) => {
@@ -143,8 +134,8 @@ export async function getFeedSchedule() {
         meal_time: meal.time,
         time_window: meal.window || '',
         items: meal.items || '',
-        has_medication: meal.hasMed === true || meal.hasMed === 'true', // Boolean is fine here
-        sort_order: String(i), // Type fix: String
+        has_medication: meal.hasMed === true || meal.hasMed === 'true',
+        sort_order: parseInt(i) || 0,
       })
     })
   })
@@ -164,7 +155,7 @@ export async function saveFeedEntry(entry) {
     time_window: entry.time_window || '',
     items: entry.items || '',
     has_medication: entry.has_medication === true || entry.has_medication === 'true',
-    sort_order: String(entry.sort_order || 0), // Type fix: String
+    sort_order: parseInt(entry.sort_order || 0) || 0,
   }
   if (entry.$id && !entry.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.feedSchedule, entry.$id, data)
@@ -189,7 +180,7 @@ export async function getDailyTasks() {
     time_period: t.time,
     note: t.note || '',
     active: true,
-    sort_order: String(i), // Type fix: String
+    sort_order: parseInt(i) || 0,
   }))
 
   try {
@@ -208,12 +199,16 @@ export async function saveDailyTask(task) {
     time_period: task.time_period,
     note: task.note || '',
     active: task.active !== false && task.active !== 'false',
-    sort_order: String(task.sort_order || 0), // Type fix: String
+    sort_order: parseInt(task.sort_order || 0) || 0,
   }
   if (task.$id && !task.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.dailyTasks, task.$id, data)
   }
   return createDoc(COLLECTIONS.dailyTasks, data)
+}
+
+export async function deleteDailyTask(docId) {
+  return deleteDoc(COLLECTIONS.dailyTasks, docId)
 }
 
 // ── PROPERTY TASKS ────────────────────────────────────────────
@@ -227,11 +222,11 @@ export async function getPropertyTasks() {
     title: t.title,
     description: t.description || '',
     category: t.category,
-    frequency_days: String(t.frequency_days || 1), // Type fix: String
+    frequency_days: parseInt(t.frequency_days || 1) || 1,
     priority: t.priority || 'normal',
     supply_location: t.supply_location || '',
     warning: t.warning || '',
-    sort_order: String(i), // Type fix: String
+    sort_order: parseInt(i) || 0,
   }))
 
   try {
@@ -248,16 +243,20 @@ export async function savePropertyTask(task) {
     title: task.title,
     description: task.description || '',
     category: task.category,
-    frequency_days: String(task.frequency_days || 1), // Type fix: String
+    frequency_days: parseInt(task.frequency_days || 1) || 1,
     priority: task.priority || 'normal',
     supply_location: task.supply_location || '',
     warning: task.warning || '',
-    sort_order: String(task.sort_order || 0), // Type fix: String
+    sort_order: parseInt(task.sort_order || 0) || 0,
   }
   if (task.$id && !task.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.propertyTasks, task.$id, data)
   }
   return createDoc(COLLECTIONS.propertyTasks, data)
+}
+
+export async function deletePropertyTask(docId) {
+  return deleteDoc(COLLECTIONS.propertyTasks, docId)
 }
 
 // ── TREATS ────────────────────────────────────────────────────
@@ -270,7 +269,7 @@ export async function getTreats() {
     animals: t.animals,
     emoji: t.emoji || '🥕',
     description: t.description,
-    sort_order: String(i), // Type fix: String
+    sort_order: parseInt(i) || 0,
   }))
 
   try {
@@ -286,12 +285,16 @@ export async function saveTreat(treat) {
     animals: treat.animals,
     emoji: treat.emoji || '🥕',
     description: treat.description,
-    sort_order: String(treat.sort_order || 0), // Type fix: String
+    sort_order: parseInt(treat.sort_order || 0) || 0,
   }
   if (treat.$id && !treat.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.treats, treat.$id, data)
   }
   return createDoc(COLLECTIONS.treats, data)
+}
+
+export async function deleteTreat(docId) {
+  return deleteDoc(COLLECTIONS.treats, docId)
 }
 
 // ── WATER NOTES ───────────────────────────────────────────────
@@ -304,7 +307,7 @@ export async function getWaterNotes() {
     emoji: w.emoji || '💧',
     note: w.note,
     urgent: w.urgent === true || w.urgent === 'true',
-    sort_order: String(i), // Type fix: String
+    sort_order: parseInt(i) || 0,
   }))
 
   try {
@@ -320,12 +323,16 @@ export async function saveWaterNote(item) {
     emoji: item.emoji || '💧',
     note: item.note,
     urgent: item.urgent === true || item.urgent === 'true',
-    sort_order: String(item.sort_order || 0), // Type fix: String
+    sort_order: parseInt(item.sort_order || 0) || 0,
   }
   if (item.$id && !item.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.waterNotes, item.$id, data)
   }
   return createDoc(COLLECTIONS.waterNotes, data)
+}
+
+export async function deleteWaterNote(docId) {
+  return deleteDoc(COLLECTIONS.waterNotes, docId)
 }
 
 // ── EMERGENCY CONTACTS ────────────────────────────────────────
@@ -346,7 +353,7 @@ export async function getContacts() {
         display: c.display || c.phone,
         note: c.note || '',
         address: c.address || '',
-        sort_order: String(i++), // Type fix: String
+        sort_order: parseInt(i++) || 0,
       })
     })
   })
@@ -368,7 +375,7 @@ export async function saveContact(contact) {
     display: contact.display || contact.phone,
     note: contact.note || '',
     address: contact.address || '',
-    sort_order: String(contact.sort_order || 0), // Type fix: String
+    sort_order: parseInt(contact.sort_order || 0) || 0,
   }
   if (contact.$id && !contact.$id.startsWith('local-')) {
     return updateDoc(COLLECTIONS.contacts, contact.$id, data)
@@ -376,7 +383,12 @@ export async function saveContact(contact) {
   return createDoc(COLLECTIONS.contacts, data)
 }
 
-// Exporting manual seed functions for AdminPanel
+export async function deleteContact(docId) {
+  return deleteDoc(COLLECTIONS.contacts, docId)
+}
+
+// ── MANUAL SEED FUNCTIONS (called when collections are empty) ─
+
 export async function seedFeedSchedule() {
   const items = []
   RANCH_CONFIG.feedSchedule.forEach((entry, ei) => {
@@ -387,12 +399,16 @@ export async function seedFeedSchedule() {
         time_window: meal.window || '',
         items: meal.items || '',
         has_medication: meal.hasMed === true || meal.hasMed === 'true',
-        sort_order: String(ei * 10 + i),
+        sort_order: parseInt(ei * 10 + i) || 0,
       })
     })
   })
-  for (const item of items) { await createDoc(COLLECTIONS.feedSchedule, item); }
-  return true;
+  const created = []
+  for (const item of items) {
+    try { created.push(await createDoc(COLLECTIONS.feedSchedule, item)) }
+    catch (e) { console.error('Seed feed failed:', e) }
+  }
+  return created
 }
 
 export async function seedDailyTasks() {
@@ -403,10 +419,14 @@ export async function seedDailyTasks() {
     time_period: t.time,
     note: t.note || '',
     active: true,
-    sort_order: String(i),
+    sort_order: parseInt(i) || 0,
   }))
-  for (const item of items) { await createDoc(COLLECTIONS.dailyTasks, item); }
-  return true;
+  const created = []
+  for (const item of items) {
+    try { created.push(await createDoc(COLLECTIONS.dailyTasks, item)) }
+    catch (e) { console.error('Seed task failed:', e) }
+  }
+  return created
 }
 
 export async function seedPropertyTasks() {
@@ -415,26 +435,42 @@ export async function seedPropertyTasks() {
     title: t.title,
     description: t.description || '',
     category: t.category,
-    frequency_days: String(t.frequency_days || 1),
+    frequency_days: parseInt(t.frequency_days || 1) || 1,
     priority: t.priority || 'normal',
     supply_location: t.supply_location || '',
     warning: t.warning || '',
-    sort_order: String(i),
+    sort_order: parseInt(i) || 0,
   }))
-  for (const item of items) { await createDoc(COLLECTIONS.propertyTasks, item); }
-  return true;
+  const created = []
+  for (const item of items) {
+    try { created.push(await createDoc(COLLECTIONS.propertyTasks, item)) }
+    catch (e) { console.error('Seed property task failed:', e) }
+  }
+  return created
 }
 
 export async function seedTreatsAndWater() {
   const treats = RANCH_CONFIG.treats.map((t, i) => ({
-    animals: t.animals, emoji: t.emoji || '🥕', description: t.description, sort_order: String(i),
+    animals: t.animals,
+    emoji: t.emoji || '🥕',
+    description: t.description,
+    sort_order: parseInt(i) || 0,
   }))
   const water = RANCH_CONFIG.waterNotes.map((w, i) => ({
-    emoji: w.emoji || '💧', note: w.note, urgent: w.urgent === true || w.urgent === 'true', sort_order: String(i),
+    emoji: w.emoji || '💧',
+    note: w.note,
+    urgent: w.urgent === true || w.urgent === 'true',
+    sort_order: parseInt(i) || 0,
   }))
-  for (const item of treats) { await createDoc(COLLECTIONS.treats, item); }
-  for (const item of water) { await createDoc(COLLECTIONS.waterNotes, item); }
-  return true;
+  for (const item of treats) {
+    try { await createDoc(COLLECTIONS.treats, item) }
+    catch (e) { console.error('Seed treat failed:', e) }
+  }
+  for (const item of water) {
+    try { await createDoc(COLLECTIONS.waterNotes, item) }
+    catch (e) { console.error('Seed water note failed:', e) }
+  }
+  return true
 }
 
 export async function seedContacts() {
@@ -443,10 +479,21 @@ export async function seedContacts() {
   RANCH_CONFIG.emergencyContacts.forEach(group => {
     group.items.forEach(c => {
       items.push({
-        category: group.category, name: c.name, role: c.role || '', phone: c.phone, display: c.display || c.phone, note: c.note || '', address: c.address || '', sort_order: String(i++),
+        category: group.category,
+        name: c.name,
+        role: c.role || '',
+        phone: c.phone,
+        display: c.display || c.phone,
+        note: c.note || '',
+        address: c.address || '',
+        sort_order: parseInt(i++) || 0,
       })
     })
   })
-  for (const item of items) { await createDoc(COLLECTIONS.contacts, item); }
-  return true;
+  const created = []
+  for (const item of items) {
+    try { created.push(await createDoc(COLLECTIONS.contacts, item)) }
+    catch (e) { console.error('Seed contact failed:', e) }
+  }
+  return created
 }
